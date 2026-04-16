@@ -1,0 +1,26 @@
+{
+  "name": "titulacion",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "db:test": "ts-node src/scripts/testDB.ts",
+    "seed:cargar": "ts-node src/scripts/cargarSemilla.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "axios": "^1.15.0",
+    "dotenv": "^17.4.2",
+    "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "@types/axios": "^0.9.36",
+    "@types/node": "^25.6.0",
+    "@types/pg": "^8.20.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.2"
+  }
+}
