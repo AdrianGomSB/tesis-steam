@@ -15,24 +15,31 @@ export type AppSemilla = {
 export async function obtenerSemillaSteam(
   ultimoAppId?: number,
 ): Promise<AppSemilla[]> {
-  try {
-    const response = await axios.get(URL_STEAM, {
-      params: {
-        key: process.env.STEAM_API_KEY,
-        include_games: true,
-        include_dlc: false,
-        include_software: false,
-        include_videos: false,
-        include_hardware: false,
-        max_results: 50,
-        ...(ultimoAppId ? { last_appid: ultimoAppId } : {}),
-      },
-      timeout: 20000,
-    });
+  const response = await axios.get(URL_STEAM, {
+    params: {
+      key: process.env.STEAM_API_KEY,
+      include_games: true,
+      include_dlc: false,
+      include_software: false,
+      include_videos: false,
+      include_hardware: false,
+      max_results: 50,
+      ...(ultimoAppId ? { last_appid: ultimoAppId } : {}),
+    },
+    timeout: 20000,
+    headers: {
+      "User-Agent": "Mozilla/5.0",
+      Accept: "application/json",
+    },
+  });
 
-    return response.data.response.apps as AppSemilla[];
-  } catch (error: any) {
-    console.error("Error al llamar a Steam:", error.code || error.message);
-    throw error;
+  const apps = response.data?.response?.apps;
+
+  if (!Array.isArray(apps)) {
+    throw new Error(
+      "La respuesta de Steam no contiene una lista válida de apps.",
+    );
   }
+
+  return apps;
 }

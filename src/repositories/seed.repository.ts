@@ -1,7 +1,9 @@
 import { pool } from "../config/db";
-import { AppSemilla } from "../services/steamSeed.service";
+import type { AppSemilla } from "../services/steamSeed.service";
 
-export async function guardarSemilla(apps: AppSemilla[]) {
+export async function guardarSemilla(apps: AppSemilla[]): Promise<void> {
+  if (!apps.length) return;
+
   const client = await pool.connect();
 
   try {
@@ -17,7 +19,8 @@ export async function guardarSemilla(apps: AppSemilla[]) {
           numero_cambio_precio
         )
         VALUES ($1, $2, $3, $4)
-        ON CONFLICT (appid) DO UPDATE SET
+        ON CONFLICT (appid)
+        DO UPDATE SET
           nombre = EXCLUDED.nombre,
           ultima_modificacion = EXCLUDED.ultima_modificacion,
           numero_cambio_precio = EXCLUDED.numero_cambio_precio
@@ -38,4 +41,12 @@ export async function guardarSemilla(apps: AppSemilla[]) {
   } finally {
     client.release();
   }
+}
+
+export async function contarSemilla(): Promise<number> {
+  const resultado = await pool.query(
+    "SELECT COUNT(*)::int AS total FROM semilla_apps_steam",
+  );
+
+  return resultado.rows[0].total;
 }

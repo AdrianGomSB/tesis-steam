@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import { obtenerSemillaSteam } from "../services/steamSeed.service";
-import { guardarSemilla } from "../repositories/seed.repository";
+import { contarSemilla, guardarSemilla } from "../repositories/seed.repository";
 
 dotenv.config();
 
@@ -8,36 +8,58 @@ async function esperar(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function obtenerConReintento(intentos = 3): Promise<any[]> {
+async function obtenerConReintento(
+  ultimoAppId?: number,
+  intentos = 3,
+): Promise<any[]> {
   try {
-    return await obtenerSemillaSteam();
-  } catch (error) {
+    return await obtenerSemillaSteam(ultimoAppId);
+  } catch (error: any) {
+    console.error("Error al llamar a Steam:", error.code || error.message);
+
     if (intentos > 0) {
       console.log(`Reintentando... intentos restantes: ${intentos}`);
       await esperar(3000);
-      return obtenerConReintento(intentos - 1);
+      return obtenerConReintento(ultimoAppId, intentos - 1);
     }
+
     throw error;
   }
 }
 
 async function main() {
   try {
-    console.log("Obteniendo datos de Steam...");
+    console.log("Iniciando carga de semilla...");
 
-    const apps = await obtenerConReintento();
+    let ultimoAppId: number | undefined = undefined;
+    let totalInsertados = 0;
 
-    if (!apps.length) {
-      throw new Error("Steam devolvió 0 apps.");
+    for (let i = 0; i < 20; i++) {
+      console.log(`Lote ${i + 1}`);
+
+      const apps = await obtenerConReintento(ultimoAppId);
+
+      if (!apps.length) {
+        console.log("No se recibieron más apps.");
+        break;
+      }
+
+      await guardarSemilla(apps);
+
+      totalInsertados += apps.length;
+
+      ultimoAppId = apps[apps.length - 1].appid;
+
+      console.log(`Insertados en lote: ${apps.length}`);
+      console.log(`Total acumulado: ${totalInsertados}`);
+
+      await esperar(2000);
     }
 
-    console.log(`Apps recibidas: ${apps.length}`);
-
-    await guardarSemilla(apps);
-
-    console.log("Datos guardados correctamente en la base.");
+    console.log("Carga completa.");
+    console.log(`Total insertado: ${totalInsertados}`);
   } catch (error) {
-    console.error("Error al cargar la semilla:", error);
+    console.error("Error en carga de semilla:", error);
   }
 }
 
