@@ -7,7 +7,8 @@
     "db:test": "ts-node src/scripts/testDB.ts",
     "seed:cargar": "ts-node src/scripts/cargarSemilla.ts",
     "juegos:procesar": "ts-node src/scripts/procesarJuegos.ts",
-    "reviews:procesar": "ts-node src/scripts/procesarReviews.ts"
+    "reviews:procesar": "ts-node src/scripts/procesarReviews.ts",
+    "features:generar": "ts-node src/scripts/generarFeaturesJuegos.ts"
   },
   "keywords": [],
   "author": "",

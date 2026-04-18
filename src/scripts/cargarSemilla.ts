@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
-import { obtenerSemillaSteam } from "../services/steamSeed.service";
-import { contarSemilla, guardarSemilla } from "../repositories/seed.repository";
+import { AppSemilla, obtenerSemillaSteam } from "../services/steamSeed.service";
+import { guardarSemilla } from "../repositories/seed.repository";
 
 dotenv.config();
 
@@ -11,14 +11,16 @@ async function esperar(ms: number) {
 async function obtenerConReintento(
   ultimoAppId?: number,
   intentos = 3,
-): Promise<any[]> {
+): Promise<AppSemilla[]> {
   try {
     return await obtenerSemillaSteam(ultimoAppId);
   } catch (error: any) {
     console.error("Error al llamar a Steam:", error.code || error.message);
 
     if (intentos > 0) {
-      console.log(`Reintentando... intentos restantes: ${intentos}`);
+      console.log(
+        `Reintentando... intentos restantes después de este intento: ${intentos - 1}`,
+      );
       await esperar(3000);
       return obtenerConReintento(ultimoAppId, intentos - 1);
     }
