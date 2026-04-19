@@ -66,20 +66,39 @@ export async function obtenerDetalleJuego(
     return null;
   }
 
-  const generos = Array.isArray(data.genres)
-    ? data.genres.map((g: any) => g.description).filter(Boolean)
+  if (!data.name) {
+    return null;
+  }
+
+  const generos: string[] = Array.isArray(data.genres)
+    ? data.genres
+        .map((g: any) => g?.description)
+        .filter((valor: unknown): valor is string => Boolean(valor))
     : [];
 
-  const categorias = Array.isArray(data.categories)
-    ? data.categories.map((c: any) => c.description).filter(Boolean)
+  const categorias: string[] = Array.isArray(data.categories)
+    ? data.categories
+        .map((c: any) => c?.description)
+        .filter((valor: unknown): valor is string => Boolean(valor))
     : [];
 
-  const desarrolladores = Array.isArray(data.developers) ? data.developers : [];
-  const distribuidores = Array.isArray(data.publishers) ? data.publishers : [];
+  const desarrolladores: string[] = Array.isArray(data.developers)
+    ? data.developers.filter(
+        (valor: unknown): valor is string =>
+          typeof valor === "string" && valor.trim().length > 0,
+      )
+    : [];
+
+  const distribuidores: string[] = Array.isArray(data.publishers)
+    ? data.publishers.filter(
+        (valor: unknown): valor is string =>
+          typeof valor === "string" && valor.trim().length > 0,
+      )
+    : [];
 
   const detalle: JuegoDetalle = {
     steam_app_id: appId,
-    nombre: data.name ?? null,
+    nombre: data.name,
     tipo: data.type ?? null,
     descripcion_corta: limpiarHtml(data.short_description),
     descripcion_detallada: limpiarHtml(data.detailed_description),
@@ -95,16 +114,25 @@ export async function obtenerDetalleJuego(
     plataforma_linux: Boolean(data.platforms?.linux),
     fecha_lanzamiento: data.release_date?.date ?? null,
     es_gratis: Boolean(data.is_free),
-    total_recomendaciones: data.recommendations?.total ?? null,
-    puntuacion_metacritic: data.metacritic?.score ?? null,
-    precio_inicial: data.price_overview?.initial ?? null,
-    precio_final: data.price_overview?.final ?? null,
-    porcentaje_descuento: data.price_overview?.discount_percent ?? null,
+    total_recomendaciones:
+      typeof data.recommendations?.total === "number"
+        ? data.recommendations.total
+        : null,
+    puntuacion_metacritic:
+      typeof data.metacritic?.score === "number" ? data.metacritic.score : null,
+    precio_inicial:
+      typeof data.price_overview?.initial === "number"
+        ? data.price_overview.initial
+        : null,
+    precio_final:
+      typeof data.price_overview?.final === "number"
+        ? data.price_overview.final
+        : null,
+    porcentaje_descuento:
+      typeof data.price_overview?.discount_percent === "number"
+        ? data.price_overview.discount_percent
+        : null,
   };
-
-  if (!detalle.nombre) {
-    return null;
-  }
 
   if (
     !detalle.descripcion_corta &&

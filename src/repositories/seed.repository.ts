@@ -1,10 +1,11 @@
 import { pool } from "../config/db";
 import type { AppSemilla } from "../services/steamSeed.service";
 
-export async function guardarSemilla(apps: AppSemilla[]): Promise<void> {
-  if (!apps.length) return;
+export async function guardarSemilla(apps: AppSemilla[]): Promise<number> {
+  if (!apps.length) return 0;
 
   const client = await pool.connect();
+  let totalProcesadas = 0;
 
   try {
     await client.query("BEGIN");
@@ -13,28 +14,23 @@ export async function guardarSemilla(apps: AppSemilla[]): Promise<void> {
       await client.query(
         `
         INSERT INTO semilla_apps_steam (
-          appid,
-          nombre,
-          ultima_modificacion,
-          numero_cambio_precio
+          steam_app_id,
+          nombre
         )
-        VALUES ($1, $2, $3, $4)
-        ON CONFLICT (appid)
+        VALUES ($1, $2)
+        ON CONFLICT (steam_app_id)
         DO UPDATE SET
           nombre = EXCLUDED.nombre,
-          ultima_modificacion = EXCLUDED.ultima_modificacion,
-          numero_cambio_precio = EXCLUDED.numero_cambio_precio
+          updated_at = NOW()
         `,
-        [
-          app.appid,
-          app.name ?? null,
-          app.last_modified ?? null,
-          app.price_change_number ?? null,
-        ],
+        [app.appid, app.name ?? null],
       );
+
+      totalProcesadas++;
     }
 
     await client.query("COMMIT");
+    return totalProcesadas;
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;
@@ -45,7 +41,7 @@ export async function guardarSemilla(apps: AppSemilla[]): Promise<void> {
 
 export async function contarSemilla(): Promise<number> {
   const resultado = await pool.query(
-    "SELECT COUNT(*)::int AS total FROM semilla_apps_steam",
+    `SELECT COUNT(*)::int AS total FROM semilla_apps_steam`,
   );
 
   return resultado.rows[0].total;

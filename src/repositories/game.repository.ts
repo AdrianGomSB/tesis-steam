@@ -2,7 +2,7 @@ import { pool } from "../config/db";
 import type { JuegoDetalle } from "../services/gameDetails.service";
 
 export type SemillaPendiente = {
-  appid: number;
+  steam_app_id: number;
   nombre: string | null;
 };
 
@@ -11,10 +11,10 @@ export async function obtenerSemillasPendientes(
 ): Promise<SemillaPendiente[]> {
   const resultado = await pool.query(
     `
-    SELECT appid, nombre
+    SELECT steam_app_id, nombre
     FROM semilla_apps_steam
-    WHERE procesado = FALSE
-    ORDER BY appid ASC
+    WHERE procesado_juego = FALSE
+    ORDER BY steam_app_id ASC
     LIMIT $1
     `,
     [limite],
@@ -34,26 +34,27 @@ export async function guardarJuego(juego: JuegoDetalle): Promise<void> {
       descripcion_detallada,
       acerca_del_juego,
       idiomas_soportados,
-      sitio_web,
-      desarrolladores,
-      distribuidores,
+      website,
+      developers,
+      publishers,
       generos,
       categorias,
-      plataforma_windows,
-      plataforma_mac,
-      plataforma_linux,
+      soporta_windows,
+      soporta_mac,
+      soporta_linux,
       fecha_lanzamiento,
       es_gratis,
-      total_recomendaciones,
-      puntuacion_metacritic,
+      recomendaciones_total,
+      metacritic_score,
       precio_inicial,
       precio_final,
-      porcentaje_descuento
+      porcentaje_descuento,
+      updated_at
     )
     VALUES (
       $1, $2, $3, $4, $5, $6, $7, $8,
       $9, $10, $11, $12, $13, $14, $15, $16,
-      $17, $18, $19, $20, $21, $22
+      $17, $18, $19, $20, $21, $22, NOW()
     )
     ON CONFLICT (steam_app_id)
     DO UPDATE SET
@@ -63,22 +64,22 @@ export async function guardarJuego(juego: JuegoDetalle): Promise<void> {
       descripcion_detallada = EXCLUDED.descripcion_detallada,
       acerca_del_juego = EXCLUDED.acerca_del_juego,
       idiomas_soportados = EXCLUDED.idiomas_soportados,
-      sitio_web = EXCLUDED.sitio_web,
-      desarrolladores = EXCLUDED.desarrolladores,
-      distribuidores = EXCLUDED.distribuidores,
+      website = EXCLUDED.website,
+      developers = EXCLUDED.developers,
+      publishers = EXCLUDED.publishers,
       generos = EXCLUDED.generos,
       categorias = EXCLUDED.categorias,
-      plataforma_windows = EXCLUDED.plataforma_windows,
-      plataforma_mac = EXCLUDED.plataforma_mac,
-      plataforma_linux = EXCLUDED.plataforma_linux,
+      soporta_windows = EXCLUDED.soporta_windows,
+      soporta_mac = EXCLUDED.soporta_mac,
+      soporta_linux = EXCLUDED.soporta_linux,
       fecha_lanzamiento = EXCLUDED.fecha_lanzamiento,
       es_gratis = EXCLUDED.es_gratis,
-      total_recomendaciones = EXCLUDED.total_recomendaciones,
-      puntuacion_metacritic = EXCLUDED.puntuacion_metacritic,
+      recomendaciones_total = EXCLUDED.recomendaciones_total,
+      metacritic_score = EXCLUDED.metacritic_score,
       precio_inicial = EXCLUDED.precio_inicial,
       precio_final = EXCLUDED.precio_final,
       porcentaje_descuento = EXCLUDED.porcentaje_descuento,
-      fecha_actualizacion_fuente = NOW()
+      updated_at = NOW()
     `,
     [
       juego.steam_app_id,
@@ -108,23 +109,24 @@ export async function guardarJuego(juego: JuegoDetalle): Promise<void> {
 }
 
 export async function marcarSemillaProcesada(
-  appId: number,
+  steamAppId: number,
   valido: boolean,
 ): Promise<void> {
   await pool.query(
     `
     UPDATE semilla_apps_steam
-    SET procesado = TRUE,
-        valido = $2
-    WHERE appid = $1
+    SET procesado_juego = TRUE,
+        valido = $2,
+        updated_at = NOW()
+    WHERE steam_app_id = $1
     `,
-    [appId, valido],
+    [steamAppId, valido],
   );
 }
 
 export async function contarJuegos(): Promise<number> {
   const resultado = await pool.query(
-    "SELECT COUNT(*)::int AS total FROM juegos",
+    `SELECT COUNT(*)::int AS total FROM juegos`,
   );
 
   return resultado.rows[0].total;

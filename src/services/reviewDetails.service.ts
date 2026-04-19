@@ -24,17 +24,8 @@ export type ReviewSteam = {
   };
 };
 
-export type ResumenReviewsSteam = {
-  review_score_desc: string | null;
-  review_score: number | null;
-  total_positive: number | null;
-  total_negative: number | null;
-  total_reviews: number | null;
-};
-
 export type RespuestaReviewsSteam = {
   reviews: ReviewSteam[];
-  summary: ResumenReviewsSteam;
   cursor: string | null;
 };
 
@@ -49,7 +40,7 @@ export async function obtenerReviewsJuego(
       json: 1,
       language: "spanish",
       filter: "recent",
-      purchase_type: "steam",
+      purchase_type: "all",
       num_per_page: 100,
       cursor,
     },
@@ -66,17 +57,8 @@ export async function obtenerReviewsJuego(
     ? data.reviews
     : [];
 
-  const summary: ResumenReviewsSteam = {
-    review_score_desc: data?.query_summary?.review_score_desc ?? null,
-    review_score: data?.query_summary?.review_score ?? null,
-    total_positive: data?.query_summary?.total_positive ?? null,
-    total_negative: data?.query_summary?.total_negative ?? null,
-    total_reviews: data?.query_summary?.total_reviews ?? null,
-  };
-
   return {
     reviews,
-    summary,
     cursor: data?.cursor ?? null,
   };
 }

@@ -9,34 +9,34 @@ import {
 
 dotenv.config();
 
-async function esperar(ms: number) {
+async function esperar(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function obtenerDetalleConReintento(appId: number, intentos = 3) {
+async function obtenerDetalleConReintento(steamAppId: number, intentos = 3) {
   try {
-    return await obtenerDetalleJuego(appId);
+    return await obtenerDetalleJuego(steamAppId);
   } catch (error: any) {
     console.error(
-      `Error al consultar appdetails para ${appId}:`,
+      `Error al consultar appdetails para ${steamAppId}:`,
       error.code || error.message,
     );
 
     if (intentos > 0) {
       console.log(
-        `Reintentando app ${appId}... intentos restantes: ${intentos}`,
+        `Reintentando app ${steamAppId}... intentos restantes: ${intentos - 1}`,
       );
       await esperar(2000);
-      return obtenerDetalleConReintento(appId, intentos - 1);
+      return obtenerDetalleConReintento(steamAppId, intentos - 1);
     }
 
     throw error;
   }
 }
 
-async function main() {
+async function main(): Promise<void> {
   try {
-    console.log("Iniciando procesamiento completo...");
+    console.log("Iniciando procesamiento completo de juegos...");
 
     let totalProcesados = 0;
     let totalValidos = 0;
@@ -54,14 +54,16 @@ async function main() {
 
       for (const semilla of semillas) {
         try {
-          const detalle = await obtenerDetalleConReintento(semilla.appid);
+          const detalle = await obtenerDetalleConReintento(
+            semilla.steam_app_id,
+          );
 
           if (detalle) {
             await guardarJuego(detalle);
-            await marcarSemillaProcesada(semilla.appid, true);
+            await marcarSemillaProcesada(semilla.steam_app_id, true);
             totalValidos++;
           } else {
-            await marcarSemillaProcesada(semilla.appid, false);
+            await marcarSemillaProcesada(semilla.steam_app_id, false);
             totalInvalidos++;
           }
 
@@ -71,9 +73,13 @@ async function main() {
             `Procesados: ${totalProcesados} | Válidos: ${totalValidos} | Inválidos: ${totalInvalidos}`,
           );
         } catch (error) {
-          console.error(`Error con appid ${semilla.appid}:`, error);
-          await marcarSemillaProcesada(semilla.appid, false);
+          console.error(
+            `Error con steam_app_id ${semilla.steam_app_id}:`,
+            error,
+          );
+          await marcarSemillaProcesada(semilla.steam_app_id, false);
           totalInvalidos++;
+          totalProcesados++;
         }
 
         await esperar(1200);
