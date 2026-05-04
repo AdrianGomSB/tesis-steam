@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --color-steam-dark: #171a21;
+  --color-steam-blue: #66c0f4;
+  --color-steam-gray: #2a475e;
+}
+
+body {
+  background-color: var(--color-steam-dark);
+  color: #f3f4f6;
+  margin: 0;
+}
