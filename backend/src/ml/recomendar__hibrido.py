@@ -9,8 +9,9 @@ from sentence_transformers import SentenceTransformer, CrossEncoder
 
 # ---------------- CONFIGURACIÓN ----------------
 MODELO_BI = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-MODELO_CROSS = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-RUTA_MODELOS = "src/ml/modelos"
+MODELO_CROSS = "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+RUTA_MODELOS = os.path.join(BASE_DIR, "modelos")
 TOP_K = 10
 
 
@@ -58,8 +59,8 @@ def sigmoid(x):
 
 
 def cargar_recursos():
-    index = faiss.read_index(f"{RUTA_MODELOS}/faiss.index")
-    ids = np.load(f"{RUTA_MODELOS}/ids.npy")
+    index = faiss.read_index(os.path.join(RUTA_MODELOS, "faiss.index"))
+    ids = np.load(os.path.join(RUTA_MODELOS, "ids.npy"))
 
     bi_encoder = SentenceTransformer(MODELO_BI)
     cross_encoder = CrossEncoder(MODELO_CROSS)
@@ -78,10 +79,15 @@ def obtener_juego(app_id):
 
     cur.execute(
         """
-        SELECT steam_app_id, nombre, texto_metadata,
-               generos_texto, categorias_texto,
-               sentimiento_score, total_resenas
-        FROM caracteristicas_juegos
+        SELECT
+            steam_app_id,
+            nombre,
+            texto_consolidado,
+            generos_texto,
+            categorias_texto,
+            0 AS sentimiento_score,
+            cantidad_reviews_usadas
+        FROM features_juegos
         WHERE steam_app_id = %s
         """,
         (app_id,),
@@ -108,10 +114,15 @@ def obtener_candidatos(ids_lista):
 
     cur.execute(
         """
-        SELECT steam_app_id, nombre, texto_metadata,
-               generos_texto, categorias_texto,
-               sentimiento_score, total_resenas
-        FROM caracteristicas_juegos
+        SELECT
+            steam_app_id,
+            nombre,
+            texto_consolidado,
+            generos_texto,
+            categorias_texto,
+            0 AS sentimiento_score,
+            cantidad_reviews_usadas
+        FROM features_juegos
         WHERE steam_app_id = ANY(%s)
         """,
         (list(map(int, ids_lista)),),
@@ -270,7 +281,30 @@ def recomendar_por_texto(consulta: str, top_k=TOP_K):
     scores_cross = cross_encoder.predict(pares_cross_encoder)
 
     resultados_finales = []
+    def calcular_keywords(consulta, texto_juego, generos, categorias):
+        consulta = (consulta or "").lower()
+        texto_total = f"{texto_juego or ''} {generos or ''} {categorias or ''}".lower()
 
+        score = 0
+
+        if any(p in consulta for p in ["disparo", "disparos", "shooter", "fps"]):
+            if any(p in texto_total for p in ["shooter", "fps", "acción", "action", "disparos"]):
+                score += 0.30
+
+        if any(p in consulta for p in ["online", "multijugador", "multiplayer"]):
+            if any(p in texto_total for p in ["online", "multiplayer", "multijugador", "cooperativo", "co-op"]):
+                score += 0.25
+
+        if any(p in consulta for p in ["gratis", "gratuito", "free", "free to play"]):
+            if any(p in texto_total for p in ["free to play", "gratis", "free"]):
+                score += 0.25
+
+        if any(p in consulta for p in ["competitivo", "competitiva", "pvp"]):
+            if any(p in texto_total for p in ["competitive", "competitivo", "pvp", "versus"]):
+                score += 0.20
+
+        return min(score, 1)
+    
     for idx, item in enumerate(candidatos_alineados):
         d = item["data"]
 
@@ -279,10 +313,10 @@ def recomendar_por_texto(consulta: str, top_k=TOP_K):
         m5_popularity = min(np.log1p(d["reviews"] or 0) / 15, 1)
 
         score_total = (
-            (item["faiss_score"] * 0.30)
-            + (m3_cross * 0.45)
-            + (m4_sentiment * 0.15)
-            + (m5_popularity * 0.10)
+            (item["faiss_score"] * 0.40)
+            + (m3_cross * 0.35)
+            + (m4_sentiment * 0.10)
+            + (m5_popularity * 0.15)
         )
 
         resultados_finales.append(

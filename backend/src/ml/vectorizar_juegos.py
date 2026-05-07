@@ -1,26 +1,28 @@
+import os
 import psycopg2
 import numpy as np
 import faiss
-import json
-from sklearn.feature_extraction.text import HashingVectorizer
-from sklearn.preprocessing import normalize
+from sentence_transformers import SentenceTransformer
 
 # ==========================
-# CONFIG DB
+# CONFIGURACIÓN
 # ==========================
 
 DB_CONFIG = {
-    "host": "localhost",
-    "database": "steam_recomendador",
-    "user": "postgres",
-    "password": "pokemonblack2"
+    "host": os.getenv("DB_HOST", "localhost"),
+    "database": os.getenv("DB_NAME", "steam_recomendador"),
+    "user": os.getenv("DB_USER", "postgres"),
+    "password": os.getenv("DB_PASSWORD", "pokemonblack2"),
 }
 
-# ==========================
-# PARÁMETROS
-# ==========================
+MODELO_BI = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
-N_FEATURES = 1024
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+RUTA_MODELOS = os.path.join(BASE_DIR, "modelos")
+
+ARCHIVO_FAISS = os.path.join(RUTA_MODELOS, "faiss.index")
+ARCHIVO_IDS = os.path.join(RUTA_MODELOS, "ids.npy")
+
 
 # ==========================
 # 1. CARGAR DATOS
@@ -31,9 +33,11 @@ def cargar_datos():
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT steam_app_id, texto_consolidado
-        FROM features_juegos
-        WHERE texto_consolidado IS NOT NULL
+        SELECT steam_app_id, texto_metadata
+        FROM caracteristicas_juegos
+        WHERE texto_metadata IS NOT NULL
+          AND LENGTH(TRIM(texto_metadata)) > 0
+        ORDER BY steam_app_id
     """)
 
     rows = cursor.fetchall()
@@ -44,61 +48,55 @@ def cargar_datos():
     app_ids = []
     textos = []
 
-    for row in rows:
-        app_ids.append(row[0])
-        textos.append(row[1])
+    for app_id, texto in rows:
+        app_ids.append(int(app_id))
+        textos.append(texto)
 
     return app_ids, textos
 
 
 # ==========================
-# 2. VECTORIZAR
+# 2. GENERAR EMBEDDINGS
 # ==========================
 
-def vectorizar(textos):
-    vectorizer = HashingVectorizer(
-        n_features=N_FEATURES,
-        alternate_sign=False,
-        norm=None
+def generar_embeddings(textos):
+    modelo = SentenceTransformer(MODELO_BI)
+
+    embeddings = modelo.encode(
+        textos,
+        batch_size=32,
+        show_progress_bar=True,
+        normalize_embeddings=True
     )
 
-    X = vectorizer.transform(textos)
-
-    return X
+    return embeddings.astype("float32")
 
 
 # ==========================
-# 3. NORMALIZAR
+# 3. CREAR ÍNDICE FAISS
 # ==========================
 
-def normalizar(X):
-    X_norm = normalize(X, norm="l2", axis=1)
-    return X_norm.toarray().astype(np.float32)
-
-
-# ==========================
-# 4. CREAR FAISS
-# ==========================
-
-def crear_indice(vectores):
-    dimension = vectores.shape[1]
+def crear_indice(embeddings):
+    dimension = embeddings.shape[1]
 
     index = faiss.IndexFlatIP(dimension)
-    index.add(vectores)
+    index.add(embeddings)
 
     return index
 
+
 # ==========================
-# 5. GUARDAR
+# 4. GUARDAR MODELOS
 # ==========================
 
 def guardar(index, app_ids):
-    faiss.write_index(index, "ml/index.faiss")
+    os.makedirs(RUTA_MODELOS, exist_ok=True)
 
-    with open("ml/mapping.json", "w", encoding="utf-8") as f:
-        json.dump(app_ids, f)
+    faiss.write_index(index, ARCHIVO_FAISS)
+    np.save(ARCHIVO_IDS, np.array(app_ids, dtype=np.int64))
 
-    print("Índice y mapping guardados correctamente")
+    print(f"Índice FAISS guardado en: {ARCHIVO_FAISS}")
+    print(f"IDs guardados en: {ARCHIVO_IDS}")
 
 
 # ==========================
@@ -109,21 +107,24 @@ def main():
     print("Cargando datos desde PostgreSQL...")
     app_ids, textos = cargar_datos()
 
-    print(f"Total juegos: {len(textos)}")
+    print(f"Total juegos cargados: {len(textos)}")
 
-    print("Vectorizando...")
-    X = vectorizar(textos)
+    if len(textos) == 0:
+        print("No hay textos para vectorizar.")
+        return
 
-    print("Normalizando...")
-    X = normalizar(X)
+    print("Generando embeddings con SentenceTransformer...")
+    embeddings = generar_embeddings(textos)
+
+    print(f"Dimensión embeddings: {embeddings.shape}")
 
     print("Creando índice FAISS...")
-    index = crear_indice(X)
+    index = crear_indice(embeddings)
 
-    print("Guardando índice...")
+    print("Guardando archivos...")
     guardar(index, app_ids)
 
-    print("Proceso completado 🚀")
+    print("Vectorización completada correctamente.")
 
 
 if __name__ == "__main__":

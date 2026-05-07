@@ -140,11 +140,19 @@ async function main(): Promise<void> {
         const resumenOpiniones = unirPartesTexto(reviewsLimpias);
 
         const textoConsolidado = unirPartesTexto([
-          juego.nombre,
-          juego.descripcion_corta,
-          generosTexto,
-          categoriasTexto,
-          resumenOpiniones,
+          `Videojuego: ${juego.nombre}.`,
+          juego.descripcion_corta
+            ? `Descripción general del juego: ${juego.descripcion_corta}.`
+            : null,
+          generosTexto
+            ? `El videojuego pertenece a los géneros: ${generosTexto}.`
+            : null,
+          categoriasTexto
+            ? `Incluye las siguientes características, modos o funcionalidades: ${categoriasTexto}.`
+            : null,
+          resumenOpiniones
+            ? `Resumen de opiniones de usuarios: ${resumenOpiniones}.`
+            : null,
         ]);
 
         await guardarFeatureJuego({
