@@ -208,10 +208,10 @@ def recomendar(app_id, top_k=TOP_K):
         m5_popularity = min(np.log1p(d["reviews"] or 0) / 15, 1)
 
         score_total = (
-            (item["faiss_score"] * 0.25)
-            + (m3_cross * 0.40)
-            + (m2_jaccard * 0.15)
-            + (m4_sentiment * 0.10)
+            (item["faiss_score"] * 0.40)
+            + (m3_cross * 0.20)
+            + (m2_jaccard * 0.25)
+            + (m4_sentiment * 0.05)
             + (m5_popularity * 0.10)
         )
 

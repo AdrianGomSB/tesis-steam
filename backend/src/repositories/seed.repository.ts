@@ -46,3 +46,39 @@ export async function contarSemilla(): Promise<number> {
 
   return resultado.rows[0].total;
 }
+
+export async function obtenerUltimoAppIdProceso(
+  nombreProceso: string,
+): Promise<number | undefined> {
+  const resultado = await pool.query(
+    `
+    SELECT ultimo_appid
+    FROM control_procesos
+    WHERE nombre_proceso = $1
+    `,
+    [nombreProceso],
+  );
+
+  return resultado.rows[0]?.ultimo_appid ?? undefined;
+}
+
+export async function guardarUltimoAppIdProceso(
+  nombreProceso: string,
+  ultimoAppId: number,
+): Promise<void> {
+  await pool.query(
+    `
+    INSERT INTO control_procesos (
+      nombre_proceso,
+      ultimo_appid,
+      actualizado_en
+    )
+    VALUES ($1, $2, CURRENT_TIMESTAMP)
+    ON CONFLICT (nombre_proceso)
+    DO UPDATE SET
+      ultimo_appid = EXCLUDED.ultimo_appid,
+      actualizado_en = CURRENT_TIMESTAMP
+    `,
+    [nombreProceso, ultimoAppId],
+  );
+}

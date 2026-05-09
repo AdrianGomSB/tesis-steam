@@ -29,12 +29,14 @@ def inicio():
 def recomendar_juego(data: RecomendarPorJuegoRequest):
     try:
         resultado = recomendar_por_juego(data.steam_app_id)
+
         return {
             "ok": True,
             "tipo": "juego",
             "steam_app_id": data.steam_app_id,
             "recomendaciones": resultado
         }
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -43,11 +45,13 @@ def recomendar_juego(data: RecomendarPorJuegoRequest):
 def recomendar_texto(data: RecomendarPorTextoRequest):
     try:
         resultado = recomendar_por_texto(data.consulta)
+
         return {
             "ok": True,
             "tipo": "texto",
             "consulta": data.consulta,
             "recomendaciones": resultado
         }
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
