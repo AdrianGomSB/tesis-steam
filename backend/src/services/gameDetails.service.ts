@@ -23,6 +23,11 @@ export type JuegoDetalle = {
   precio_inicial: number | null;
   precio_final: number | null;
   porcentaje_descuento: number | null;
+  tags: string[];
+  positive: number | null;
+  negative: number | null;
+  owners: string | null;
+  ccu: number | null;
 };
 
 function limpiarHtml(texto?: string | null): string | null {
@@ -132,6 +137,12 @@ export async function obtenerDetalleJuego(
       typeof data.price_overview?.discount_percent === "number"
         ? data.price_overview.discount_percent
         : null,
+
+    tags: [],
+    positive: null,
+    negative: null,
+    owners: null,
+    ccu: null,
   };
 
   if (

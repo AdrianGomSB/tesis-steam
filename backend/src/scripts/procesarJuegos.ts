@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import { obtenerDetalleJuego } from "../services/gameDetails.service";
+import { obtenerSteamSpy } from "../services/steamSpy.service";
 import {
   contarJuegos,
   guardarJuego,
@@ -57,6 +58,16 @@ async function main(): Promise<void> {
           const detalle = await obtenerDetalleConReintento(
             semilla.steam_app_id,
           );
+          const steamSpy = await obtenerSteamSpy(semilla.steam_app_id);
+
+          if (detalle && steamSpy) {
+            detalle.tags = Object.keys(steamSpy.tags);
+
+            detalle.positive = steamSpy.positive;
+            detalle.negative = steamSpy.negative;
+            detalle.owners = steamSpy.owners;
+            detalle.ccu = steamSpy.ccu;
+          }
 
           if (detalle) {
             await guardarJuego(detalle);

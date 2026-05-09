@@ -49,12 +49,18 @@ export async function guardarJuego(juego: JuegoDetalle): Promise<void> {
       precio_inicial,
       precio_final,
       porcentaje_descuento,
+      tags,
+      steamspy_positive,
+      steamspy_negative,
+      steamspy_owners,
+      steamspy_ccu,
       updated_at
     )
     VALUES (
       $1, $2, $3, $4, $5, $6, $7, $8,
       $9, $10, $11, $12, $13, $14, $15, $16,
-      $17, $18, $19, $20, $21, $22, NOW()
+      $17, $18, $19, $20, $21, $22,
+      $23, $24, $25, $26, $27, NOW()
     )
     ON CONFLICT (steam_app_id)
     DO UPDATE SET
@@ -79,6 +85,11 @@ export async function guardarJuego(juego: JuegoDetalle): Promise<void> {
       precio_inicial = EXCLUDED.precio_inicial,
       precio_final = EXCLUDED.precio_final,
       porcentaje_descuento = EXCLUDED.porcentaje_descuento,
+      tags = EXCLUDED.tags,
+      steamspy_positive = EXCLUDED.steamspy_positive,
+      steamspy_negative = EXCLUDED.steamspy_negative,
+      steamspy_owners = EXCLUDED.steamspy_owners,
+      steamspy_ccu = EXCLUDED.steamspy_ccu,
       updated_at = NOW()
     `,
     [
@@ -104,6 +115,11 @@ export async function guardarJuego(juego: JuegoDetalle): Promise<void> {
       juego.precio_inicial,
       juego.precio_final,
       juego.porcentaje_descuento,
+      juego.tags,
+      juego.positive,
+      juego.negative,
+      juego.owners,
+      juego.ccu,
     ],
   );
 }
