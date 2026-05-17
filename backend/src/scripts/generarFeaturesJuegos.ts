@@ -9,8 +9,8 @@ import {
 dotenv.config();
 
 const LIMITE_JUEGOS_POR_LOTE = 50;
-const LIMITE_REVIEWS_POR_JUEGO = 30;
-const MAX_REVIEWS_LIMPIAS_POR_JUEGO = 15;
+const LIMITE_REVIEWS_POR_JUEGO = 50; // Subimos para compensar el filtro más estricto
+const MAX_REVIEWS_LIMPIAS_POR_JUEGO = 10;
 const PAUSA_ENTRE_JUEGOS_MS = 300;
 
 async function esperar(ms: number): Promise<void> {
@@ -39,27 +39,39 @@ function esReviewUtil(review: string): boolean {
 
   if (!texto) return false;
 
-  // mínimo y máximo de longitud
-  if (texto.length < 30 || texto.length > 250) return false;
+  // FIX: mínimo subido de 15 a 80 caracteres — elimina "si", "juegazo",
+  // "alto juego", "CHIMBA", "hola adios", emojis sueltos, números sueltos
+  if (texto.length < 80 || texto.length > 600) return false;
 
-  // solo números, símbolos o separadores
+  // Solo números, símbolos o separadores
   if (/^[\d\s.,!?;:()\-]+$/.test(texto)) return false;
 
-  // muy pocas palabras
+  // FIX: mínimo subido de 3 a 12 palabras — elimina frases de 2-3 palabras
+  // que no aportan información semántica útil
   const palabras = texto.split(/\s+/).filter(Boolean);
-  if (palabras.length < 5) return false;
+  if (palabras.length < 12) return false;
 
-  // demasiada repetición del mismo carácter (spam)
-  if (/(.)\1{4,}/.test(texto)) return false;
+  // Spam por repetición de caracteres (ej: "aaaaaaaa")
+  if (/(.)\\1{4,}/.test(texto)) return false;
 
-  // texto demasiado repetitivo
+  // Texto demasiado repetitivo (mismas palabras una y otra vez)
   const palabrasUnicas = new Set(palabras);
-  if (palabras.length >= 6 && palabrasUnicas.size / palabras.length < 0.5) {
+  if (palabras.length >= 8 && palabrasUnicas.size / palabras.length < 0.4) {
     return false;
   }
 
-  // expresiones demasiado genéricas o vacías
+  // Expresiones genéricas de una sola idea sin contenido descriptivo
   const expresionesBasura = new Set([
+    "muy bueno",
+    "muy malo",
+    "muy mal",
+    "buen juego",
+    "mal juego",
+    "juegazo",
+    "joyita",
+    "basura",
+    "poronga",
+    "mierda",
     "hola",
     "adios",
     "xd",
@@ -68,19 +80,12 @@ function esReviewUtil(review: string): boolean {
     "god",
     "10 10",
     "100 100",
-    "muy bueno",
-    "muy mal",
-    "basura",
-    "poronga",
-    "mierda",
-    "juegazo",
-    "joyita",
-    "buen juego",
+    "chimba",
+    "alto juego",
   ]);
-
   if (expresionesBasura.has(texto)) return false;
 
-  // insultos sueltos o reviews cortas sin contenido real
+  // Insultos sueltos en reviews cortas
   const insultos = [
     "basura",
     "poronga",
@@ -91,11 +96,22 @@ function esReviewUtil(review: string): boolean {
     "malisimo",
     "malísimo",
   ];
+  if (palabras.length <= 8 && insultos.some((i) => texto.includes(i))) {
+    return false;
+  }
 
-  if (
-    palabras.length <= 6 &&
-    insultos.some((insulto) => texto.includes(insulto))
-  ) {
+  // FIX: detectar reviews que son claramente de otro juego
+  // (contienen referencias a personajes/franquicias ajenas)
+  const referenciasFueraDeContexto = [
+    "arcadia bay",
+    "max chloe",
+    "life is strange",
+    "zelda",
+    "mario",
+    "sonic",
+    "minecraft",
+  ];
+  if (referenciasFueraDeContexto.some((ref) => texto.includes(ref))) {
     return false;
   }
 
@@ -137,7 +153,19 @@ async function main(): Promise<void> {
           ? juego.categorias.join(" ")
           : "";
 
+        const tagsTexto = Array.isArray(juego.tags) ? juego.tags.join(" ") : "";
+
         const resumenOpiniones = unirPartesTexto(reviewsLimpias);
+
+        const steamspyResumen =
+          juego.steamspy_positive !== null || juego.steamspy_negative !== null
+            ? `Métricas de comunidad: ${juego.steamspy_positive ?? 0} reseñas positivas y ${juego.steamspy_negative ?? 0} reseñas negativas.`
+            : null;
+
+        const jugadoresActuales =
+          juego.steamspy_ccu !== null
+            ? `Jugadores concurrentes aproximados: ${juego.steamspy_ccu}.`
+            : null;
 
         const textoConsolidado = unirPartesTexto([
           `Videojuego: ${juego.nombre}.`,
@@ -150,8 +178,17 @@ async function main(): Promise<void> {
           categoriasTexto
             ? `Incluye las siguientes características, modos o funcionalidades: ${categoriasTexto}.`
             : null,
+          tagsTexto
+            ? `Etiquetas populares del videojuego: ${tagsTexto}.`
+            : null,
+          //steamspyResumen,
+          //jugadoresActuales,
+          juego.descripcion_detallada
+            ? `Descripción detallada: ${juego.descripcion_detallada}.`
+            : null,
+          // Las reviews van al final — son la parte más ruidosa
           resumenOpiniones
-            ? `Resumen de opiniones de usuarios: ${resumenOpiniones}.`
+            ? `Opiniones de usuarios: ${resumenOpiniones}.`
             : null,
         ]);
 
@@ -168,7 +205,9 @@ async function main(): Promise<void> {
         totalProcesados++;
 
         console.log(
-          `Feature generada: ${juego.nombre} (${juego.steam_app_id}) | reviews útiles: ${reviewsLimpias.length}`,
+          `Feature generada: ${juego.nombre} (${juego.steam_app_id}) | tags: ${
+            juego.tags?.length ?? 0
+          } | reviews útiles: ${reviewsLimpias.length}`,
         );
 
         await esperar(PAUSA_ENTRE_JUEGOS_MS);

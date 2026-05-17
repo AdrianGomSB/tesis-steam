@@ -31,16 +31,27 @@ def conectar():
 
 
 # ---------------- FUNCIONES DE UTILIDAD ----------------
-def normalizar_lista(texto):
-    if not texto:
+def normalizar_lista(valor):
+    """
+    Convierte géneros, categorías o tags a un set comparable.
+    - Si ya es lista Python (ej: tags text[] de PostgreSQL) → directo.
+    - Si es string separado por espacios (ej: generos_texto, categorias_texto) → divide por espacio.
+    - Si tiene comas, punto y coma o pipes también los considera separadores.
+    """
+    if not valor:
         return set()
 
-    texto = str(texto).lower()
+    if isinstance(valor, list):
+        return {str(v).lower().strip() for v in valor if str(v).strip()}
+
+    texto = str(valor).lower()
 
     for char in ["{", "}", "[", "]", '"', "'"]:
         texto = texto.replace(char, "")
 
-    partes = re.split(r",|;|\|", texto)
+    # FIX: incluir espacio como separador para generos_texto y categorias_texto
+    partes = re.split(r",|;|\||\s+", texto)
+
     return {p.strip() for p in partes if p.strip()}
 
 
@@ -77,18 +88,28 @@ def obtener_juego(app_id):
 
     cur = conn.cursor()
 
+    # FIX sentimiento: ratio real de reviews positivas en lugar de 0 hardcodeado
+    # FIX popularidad: total real de reviews en lugar de cantidad_reviews_usadas (máx 15-30)
     cur.execute(
         """
         SELECT
-            steam_app_id,
-            nombre,
-            texto_consolidado,
-            generos_texto,
-            categorias_texto,
-            0 AS sentimiento_score,
-            cantidad_reviews_usadas
-        FROM features_juegos
-        WHERE steam_app_id = %s
+            f.steam_app_id,
+            f.nombre,
+            f.texto_consolidado,
+            f.generos_texto,
+            f.categorias_texto,
+            COALESCE(
+                (SELECT COUNT(*) FILTER (WHERE r.voted_up = TRUE)::float
+                 / NULLIF(COUNT(*), 0)
+                 FROM reviews r
+                 WHERE r.steam_app_id = f.steam_app_id),
+                0.5
+            ) AS ratio_positivo,
+            (SELECT COUNT(*) FROM reviews r WHERE r.steam_app_id = f.steam_app_id) AS total_reviews,
+            COALESCE(j.tags, ARRAY[]::text[]) AS tags
+        FROM features_juegos f
+        LEFT JOIN juegos j ON j.steam_app_id = f.steam_app_id
+        WHERE f.steam_app_id = %s
         """,
         (app_id,),
     )
@@ -115,15 +136,23 @@ def obtener_candidatos(ids_lista):
     cur.execute(
         """
         SELECT
-            steam_app_id,
-            nombre,
-            texto_consolidado,
-            generos_texto,
-            categorias_texto,
-            0 AS sentimiento_score,
-            cantidad_reviews_usadas
-        FROM features_juegos
-        WHERE steam_app_id = ANY(%s)
+            f.steam_app_id,
+            f.nombre,
+            f.texto_consolidado,
+            f.generos_texto,
+            f.categorias_texto,
+            COALESCE(
+                (SELECT COUNT(*) FILTER (WHERE r.voted_up = TRUE)::float
+                 / NULLIF(COUNT(*), 0)
+                 FROM reviews r
+                 WHERE r.steam_app_id = f.steam_app_id),
+                0.5
+            ) AS ratio_positivo,
+            (SELECT COUNT(*) FROM reviews r WHERE r.steam_app_id = f.steam_app_id) AS total_reviews,
+            COALESCE(j.tags, ARRAY[]::text[]) AS tags
+        FROM features_juegos f
+        LEFT JOIN juegos j ON j.steam_app_id = f.steam_app_id
+        WHERE f.steam_app_id = ANY(%s)
         """,
         (list(map(int, ids_lista)),),
     )
@@ -139,8 +168,9 @@ def obtener_candidatos(ids_lista):
             "texto_metadata": r[2],
             "generos": r[3],
             "categorias": r[4],
-            "sentimiento": r[5],
-            "reviews": r[6],
+            "sentimiento": r[5],   # ahora es ratio real [0, 1]
+            "reviews": r[6],       # ahora es el total real de reviews
+            "tags": r[7],
         }
         for r in rows
     }
@@ -155,7 +185,7 @@ def recomendar(app_id, top_k=TOP_K):
     if not base:
         return {"error": "Juego base no encontrado"}
 
-    base_id, nombre_base, texto_base, gen_base, cat_base, sent_base, rev_base = base
+    base_id, nombre_base, texto_base, gen_base, cat_base, sent_base, rev_base, tags_base = base
 
     if not texto_base:
         return {"error": "El juego base no tiene texto_metadata"}
@@ -199,22 +229,29 @@ def recomendar(app_id, top_k=TOP_K):
 
         m3_cross = sigmoid(scores_cross[idx])
 
-        m2_jaccard = (
-            calcular_jaccard(gen_base, d["generos"])
-            + calcular_jaccard(cat_base, d["categorias"])
-        ) / 2
+        m2_generos = calcular_jaccard(gen_base, d["generos"])
+        m2_categorias = calcular_jaccard(cat_base, d["categorias"])
+        m2_tags = calcular_jaccard(tags_base, d["tags"])
 
-        m4_sentiment = (float(d["sentimiento"] or 0) + 1) / 2
+        m2_jaccard = (
+            (m2_generos * 0.05)
+            + (m2_categorias * 0.15)
+            + (m2_tags * 0.80)
+        )
+
+        # FIX: sentimiento ya viene como ratio [0,1], no necesita transformación
+        m4_sentiment = float(d["sentimiento"] or 0.5)
+
+        # FIX: reviews ahora es el total real (no las usadas para features)
         m5_popularity = min(np.log1p(d["reviews"] or 0) / 15, 1)
 
         score_total = (
-            (item["faiss_score"] * 0.40)
-            + (m3_cross * 0.20)
-            + (m2_jaccard * 0.25)
-            + (m4_sentiment * 0.05)
-            + (m5_popularity * 0.10)
+            (item["faiss_score"] * 0.30)
+            + (m3_cross * 0.25)   # subir — es más preciso que FAISS
+            + (m2_jaccard * 0.40) # bajar un poco — los tags ya aportan bastante
+            + (m4_sentiment * 0.03)
+            + (m5_popularity * 0.02)
         )
-
         resultados_finales.append(
             {
                 "app_id": int(item["id"]),
@@ -226,6 +263,9 @@ def recomendar(app_id, top_k=TOP_K):
                     "jaccard": float(round(m2_jaccard, 3)),
                     "sentimiento": float(round(m4_sentiment, 3)),
                     "popularidad": float(round(m5_popularity, 3)),
+                    "jaccard_generos": float(round(m2_generos, 3)),
+                    "jaccard_categorias": float(round(m2_categorias, 3)),
+                    "jaccard_tags": float(round(m2_tags, 3)),
                 },
             }
         )
@@ -281,42 +321,21 @@ def recomendar_por_texto(consulta: str, top_k=TOP_K):
     scores_cross = cross_encoder.predict(pares_cross_encoder)
 
     resultados_finales = []
-    def calcular_keywords(consulta, texto_juego, generos, categorias):
-        consulta = (consulta or "").lower()
-        texto_total = f"{texto_juego or ''} {generos or ''} {categorias or ''}".lower()
 
-        score = 0
-
-        if any(p in consulta for p in ["disparo", "disparos", "shooter", "fps"]):
-            if any(p in texto_total for p in ["shooter", "fps", "acción", "action", "disparos"]):
-                score += 0.30
-
-        if any(p in consulta for p in ["online", "multijugador", "multiplayer"]):
-            if any(p in texto_total for p in ["online", "multiplayer", "multijugador", "cooperativo", "co-op"]):
-                score += 0.25
-
-        if any(p in consulta for p in ["gratis", "gratuito", "free", "free to play"]):
-            if any(p in texto_total for p in ["free to play", "gratis", "free"]):
-                score += 0.25
-
-        if any(p in consulta for p in ["competitivo", "competitiva", "pvp"]):
-            if any(p in texto_total for p in ["competitive", "competitivo", "pvp", "versus"]):
-                score += 0.20
-
-        return min(score, 1)
-    
     for idx, item in enumerate(candidatos_alineados):
         d = item["data"]
 
         m3_cross = sigmoid(scores_cross[idx])
-        m4_sentiment = (float(d["sentimiento"] or 0) + 1) / 2
+
+        # FIX: mismo arreglo de sentimiento y popularidad
+        m4_sentiment = float(d["sentimiento"] or 0.5)
         m5_popularity = min(np.log1p(d["reviews"] or 0) / 15, 1)
 
         score_total = (
             (item["faiss_score"] * 0.40)
-            + (m3_cross * 0.35)
-            + (m4_sentiment * 0.10)
-            + (m5_popularity * 0.15)
+            + (m3_cross * 0.50)   # era 0.35 — el cross-encoder es el más preciso
+            + (m4_sentiment * 0.05)
+            + (m5_popularity * 0.05)
         )
 
         resultados_finales.append(
@@ -364,3 +383,34 @@ if __name__ == "__main__":
 
     except Exception as e:
         print(json.dumps({"error": str(e)}, ensure_ascii=False, indent=2))
+
+
+import faiss, numpy as np
+from sentence_transformers import SentenceTransformer
+import psycopg2, os
+
+BASE_DIR = os.path.dirname(os.path.abspath("__file__"))
+RUTA_MODELOS = "src/ml/modelos"
+
+index = faiss.read_index(f"{RUTA_MODELOS}/faiss.index")
+ids = np.load(f"{RUTA_MODELOS}/ids.npy")
+modelo = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+
+# Obtener texto de CS (app 10) desde tu DB
+conn = psycopg2.connect(host="localhost", database="steam_recomendador", 
+                         user="postgres", password="pokemonblack2")
+cur = conn.cursor()
+cur.execute("SELECT texto_consolidado FROM features_juegos WHERE steam_app_id = 10")
+texto_cs = cur.fetchone()[0]
+
+# Ver en qué posición aparecen CS:GO (730) y CS:Source (240)
+vector = modelo.encode([texto_cs], normalize_embeddings=True).astype("float32")
+D, I = index.search(vector, 100)  # buscar top 100
+
+ids_resultado = [int(ids[i]) for i in I[0]]
+distancias = D[0]
+
+targets = {730: "CS2", 240: "CS:Source", 80: "CS:CZ", 10: "CS original"}
+for pos, (idx, dist) in enumerate(zip(ids_resultado, distancias)):
+    if idx in targets:
+        print(f"Posición {pos+1}: {targets[idx]} (appid={idx}) | distancia FAISS={dist:.4f}")

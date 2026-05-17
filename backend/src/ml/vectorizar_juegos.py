@@ -33,12 +33,12 @@ def cargar_datos():
     cursor = conn.cursor()
 
     cursor.execute("""
-        SELECT steam_app_id, texto_metadata
-        FROM caracteristicas_juegos
-        WHERE texto_metadata IS NOT NULL
-          AND LENGTH(TRIM(texto_metadata)) > 0
-        ORDER BY steam_app_id
-    """)
+    SELECT steam_app_id, texto_consolidado
+    FROM features_juegos
+    WHERE texto_consolidado IS NOT NULL
+      AND LENGTH(TRIM(texto_consolidado)) > 0
+    ORDER BY steam_app_id
+""")
 
     rows = cursor.fetchall()
 

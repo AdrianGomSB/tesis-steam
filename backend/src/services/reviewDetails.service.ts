@@ -39,7 +39,7 @@ export async function obtenerReviewsJuego(
     params: {
       json: 1,
       language: "spanish",
-      filter: "recent",
+      filter: "all",
       purchase_type: "all",
       num_per_page: 100,
       cursor,

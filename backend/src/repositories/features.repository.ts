@@ -8,6 +8,10 @@ export type JuegoBaseFeature = {
   acerca_del_juego: string | null;
   generos: string[] | null;
   categorias: string[] | null;
+  tags: string[] | null;
+  steamspy_positive: number | null;
+  steamspy_negative: number | null;
+  steamspy_ccu: number | null;
 };
 
 export type FeatureJuegoInsert = {
@@ -32,7 +36,11 @@ export async function obtenerJuegosParaFeatures(
       j.descripcion_detallada,
       j.acerca_del_juego,
       j.generos,
-      j.categorias
+      j.categorias,
+      j.tags,
+      j.steamspy_positive,
+      j.steamspy_negative,
+      j.steamspy_ccu
     FROM juegos j
     WHERE NOT EXISTS (
       SELECT 1
