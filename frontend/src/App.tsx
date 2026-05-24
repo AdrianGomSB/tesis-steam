@@ -55,7 +55,6 @@ const COMO_FUNCIONA = [
   },
 ];
 
-// ---------------- SCORE RING ----------------
 function ScoreRing({ score, size = 80 }: { score: number; size?: number }) {
   const pct = Math.round(score * 100);
   const r = size / 2 - 7;
@@ -128,7 +127,6 @@ function ScoreRing({ score, size = 80 }: { score: number; size?: number }) {
   );
 }
 
-// ---------------- METRIC BAR ----------------
 function MetricBar({
   label,
   value,
@@ -184,7 +182,6 @@ function MetricBar({
   );
 }
 
-// ---------------- GAME CARD ----------------
 function GameCard({ game, index }: { game: Recomendacion; index: number }) {
   const [imgOk, setImgOk] = useState(true);
   const [expanded, setExpanded] = useState(false);
@@ -225,7 +222,6 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
         el.style.boxShadow = "none";
       }}
     >
-      {/* Imagen */}
       <div style={{ position: "relative", overflow: "hidden" }}>
         {imgOk ? (
           <img
@@ -258,8 +254,6 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
             🎮
           </div>
         )}
-
-        {/* Overlay gradiente */}
         <div
           style={{
             position: "absolute",
@@ -268,8 +262,6 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
               "linear-gradient(to bottom, transparent 40%, #0a0a16 100%)",
           }}
         />
-
-        {/* Rank badge */}
         <div
           style={{
             position: "absolute",
@@ -286,14 +278,11 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
         >
           {rankLabel}
         </div>
-
-        {/* Score ring */}
         <div style={{ position: "absolute", top: 8, right: 8 }}>
           <ScoreRing score={game.score} size={72} />
         </div>
       </div>
 
-      {/* Contenido */}
       <div style={{ padding: "14px 18px 18px" }}>
         <h3
           style={{
@@ -336,7 +325,6 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
               fontSize: 11,
               color: "#00b4ff",
               textDecoration: "none",
-              letterSpacing: 0.5,
               transition: "color 0.2s",
             }}
             onMouseEnter={(e) => (e.currentTarget.style.color = "#66d4ff")}
@@ -346,7 +334,6 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
           </a>
         </div>
 
-        {/* Sentimiento y popularidad siempre visibles */}
         <div
           style={{
             display: "grid",
@@ -392,7 +379,6 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
           </div>
         </div>
 
-        {/* Botón expandir métricas */}
         <button
           onClick={() => setExpanded(!expanded)}
           style={{
@@ -428,7 +414,6 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
           <span>{expanded ? "Ocultar métricas IA" : "Ver métricas IA"}</span>
         </button>
 
-        {/* Métricas expandibles */}
         {expanded && (
           <div
             style={{
@@ -477,7 +462,6 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
   );
 }
 
-// ---------------- AUTOCOMPLETE ----------------
 function AutocompleteJuego({
   onSelect,
 }: {
@@ -550,20 +534,7 @@ function AutocompleteJuego({
       ref={containerRef}
       style={{ position: "relative", flex: 1, zIndex: 300 }}
     >
-      <div
-        style={{
-          position: "absolute",
-          top: "calc(100% + 6px)",
-          left: 0,
-          right: 0,
-          background: "#0d0d1f",
-          border: "1px solid #ffffff18",
-          borderRadius: 10,
-          overflow: "hidden",
-          zIndex: 400,
-          boxShadow: "0 16px 48px #000000cc",
-        }}
-      >
+      <div style={{ position: "relative" }}>
         <input
           className="gg-input"
           type="text"
@@ -609,7 +580,6 @@ function AutocompleteJuego({
               fontSize: 20,
               lineHeight: 1,
               padding: 0,
-              transition: "color 0.2s",
             }}
           >
             ×
@@ -628,7 +598,7 @@ function AutocompleteJuego({
             border: "1px solid #ffffff18",
             borderRadius: 10,
             overflow: "hidden",
-            zIndex: 200,
+            zIndex: 400,
             boxShadow: "0 16px 48px #000000cc",
           }}
         >
@@ -701,7 +671,6 @@ function AutocompleteJuego({
   );
 }
 
-// ---------------- APP PRINCIPAL ----------------
 export default function App() {
   const [modo, setModo] = useState<"juego" | "texto">("juego");
   const [juegoSeleccionado, setJuegoSeleccionado] =
@@ -765,115 +734,45 @@ export default function App() {
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Barlow:ital,wght@0,400;0,500;0,600;1,400&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
-        body {
-          background: #07071a;
-          color: #e0e0e0;
-          font-family: 'Barlow', sans-serif;
-          min-height: 100vh;
-          overflow-x: hidden;
-        }
-
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(24px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
+        body { background: #07071a; color: #e0e0e0; font-family: 'Barlow', sans-serif; min-height: 100vh; overflow-x: hidden; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes gradientShift {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          50% { transform: translateY(-12px) rotate(3deg); }
-        }
-        @keyframes scanPulse {
-          0%, 100% { opacity: 0.3; }
-          50% { opacity: 0.6; }
-        }
-
+        @keyframes gradientShift { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        @keyframes float { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-12px) rotate(3deg); } }
+        @keyframes scanPulse { 0%,100% { opacity: 0.3; } 50% { opacity: 0.9; } }
         .gg-input {
-          width: 100%;
-          background: #0d0d22;
-          border: 1px solid #ffffff18;
-          color: #fff;
-          padding: 15px 18px;
-          font-family: 'Barlow', sans-serif;
-          font-size: 15px;
-          border-radius: 10px;
-          outline: none;
-          transition: border-color 0.2s, box-shadow 0.2s;
+          width: 100%; background: #0d0d22; border: 1px solid #ffffff18; color: #fff;
+          padding: 15px 18px; font-family: 'Barlow', sans-serif; font-size: 15px;
+          border-radius: 10px; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .gg-input:focus {
-          border-color: #ffe600aa;
-          box-shadow: 0 0 0 3px #ffe60012;
-        }
+        .gg-input:focus { border-color: #ffe600aa; box-shadow: 0 0 0 3px #ffe60012; }
         .gg-input::placeholder { color: #ffffff33; }
-
         .btn-mode {
-          padding: 9px 22px;
-          border-radius: 8px;
-          border: 1px solid #ffffff14;
-          background: transparent;
-          color: #ffffff55;
-          font-family: 'Barlow', sans-serif;
-          font-size: 13px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-          letter-spacing: 1px;
-          text-transform: uppercase;
+          padding: 9px 22px; border-radius: 8px; border: 1px solid #ffffff14;
+          background: transparent; color: #ffffff55; font-family: 'Barlow', sans-serif;
+          font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+          letter-spacing: 1px; text-transform: uppercase;
         }
         .btn-mode:hover { border-color: #ffe60055; color: #ffe600; }
-        .btn-mode.active {
-          background: #ffe600;
-          border-color: #ffe600;
-          color: #000;
-          font-weight: 700;
-        }
-
+        .btn-mode.active { background: #ffe600; border-color: #ffe600; color: #000; font-weight: 700; }
         .btn-buscar {
-          background: linear-gradient(135deg, #ffe600, #ffaa00);
-          border: none;
-          color: #000;
-          font-family: 'Rajdhani', sans-serif;
-          font-size: 16px;
-          font-weight: 700;
-          padding: 15px 32px;
-          border-radius: 10px;
-          cursor: pointer;
-          letter-spacing: 2px;
-          text-transform: uppercase;
-          transition: all 0.2s;
-          white-space: nowrap;
+          background: linear-gradient(135deg, #ffe600, #ffaa00); border: none; color: #000;
+          font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700;
+          padding: 15px 32px; border-radius: 10px; cursor: pointer; letter-spacing: 2px;
+          text-transform: uppercase; transition: all 0.2s; white-space: nowrap;
           box-shadow: 0 4px 20px #ffe60033;
         }
         .btn-buscar:hover { transform: translateY(-2px); box-shadow: 0 8px 28px #ffe60055; }
         .btn-buscar:active { transform: translateY(0); }
         .btn-buscar:disabled { background: #1e1e3a; color: #ffffff33; cursor: not-allowed; transform: none; box-shadow: none; }
-
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 22px; }
-
-        .stat-card {
-          background: #0d0d22;
-          border: 1px solid #ffffff0a;
-          border-radius: 12px;
-          padding: 20px 24px;
-          text-align: center;
-          transition: border-color 0.2s, transform 0.2s;
-        }
+        .stat-card { background: #0d0d22; border: 1px solid #ffffff0a; border-radius: 12px; padding: 20px 24px; text-align: center; transition: border-color 0.2s, transform 0.2s; }
         .stat-card:hover { border-color: #ffe60033; transform: translateY(-3px); }
-
-        .how-card {
-          background: #0d0d22;
-          border: 1px solid #ffffff0a;
-          border-radius: 12px;
-          padding: 22px;
-          transition: border-color 0.2s, transform 0.2s;
-        }
+        .how-card { background: #0d0d22; border: 1px solid #ffffff0a; border-radius: 12px; padding: 22px; transition: border-color 0.2s, transform 0.2s; }
         .how-card:hover { border-color: #00ff9d33; transform: translateY(-3px); }
       `}</style>
 
-      {/* Fondo animado */}
+      {/* Fondo */}
       <div
         style={{
           position: "fixed",
@@ -922,7 +821,6 @@ export default function App() {
             animation: "float 7s ease-in-out 4s infinite",
           }}
         />
-        {/* Grid lines */}
         <div
           style={{
             position: "absolute",
@@ -934,7 +832,7 @@ export default function App() {
         />
       </div>
 
-      {/* Barra superior rainbow */}
+      {/* Barra top */}
       <div
         style={{
           position: "fixed",
@@ -950,6 +848,63 @@ export default function App() {
         }}
       />
 
+      {/* Navbar */}
+      <nav
+        style={{
+          position: "fixed",
+          top: 3,
+          left: 0,
+          right: 0,
+          zIndex: 99,
+          background: "#07071aee",
+          backdropFilter: "blur(12px)",
+          borderBottom: "1px solid #ffffff08",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "12px 32px",
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "'Rajdhani', sans-serif",
+            fontSize: 20,
+            fontWeight: 700,
+            color: "#fff",
+            letterSpacing: -0.5,
+          }}
+        >
+          GG<span style={{ color: "#ffe600" }}>.</span>
+        </div>
+        <a
+          href="/admin"
+          style={{
+            fontSize: 12,
+            color: "#ffffff44",
+            letterSpacing: 2,
+            textTransform: "uppercase",
+            textDecoration: "none",
+            border: "1px solid #ffffff14",
+            borderRadius: 6,
+            padding: "5px 14px",
+            transition: "all 0.2s",
+            fontFamily: "'Barlow', sans-serif",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLAnchorElement).style.borderColor =
+              "#ffe60044";
+            (e.currentTarget as HTMLAnchorElement).style.color = "#ffe600";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLAnchorElement).style.borderColor =
+              "#ffffff14";
+            (e.currentTarget as HTMLAnchorElement).style.color = "#ffffff44";
+          }}
+        >
+          Panel Admin
+        </a>
+      </nav>
+
       <div
         style={{
           position: "relative",
@@ -959,11 +914,11 @@ export default function App() {
           padding: "0 24px 80px",
         }}
       >
-        {/* ===== HERO ===== */}
+        {/* Hero */}
         <header
           style={{
             textAlign: "center",
-            padding: "80px 0 64px",
+            padding: "120px 0 64px",
             animation: "fadeUp 0.6s ease both",
           }}
         >
@@ -1007,26 +962,8 @@ export default function App() {
               color: "#fff",
             }}
           >
-            GG
-            <span
-              style={{
-                color: "transparent",
-                backgroundClip: "text",
-                WebkitBackgroundClip: "text",
-                background: "linear-gradient(135deg, #ffe600, #ffaa00)",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              .
-            </span>
-            <span
-              style={{
-                color: "#ffffff",
-                textShadow: "0 0 40px #ffe60066, 0 0 80px #ffe60033",
-              }}
-            >
-              RECOMENDADOR
-            </span>
+            GG<span style={{ color: "#ffe600" }}>.</span>
+            <span style={{ color: "#ffffff" }}>RECOMENDADOR</span>
           </h1>
 
           <p
@@ -1042,7 +979,8 @@ export default function App() {
             procesamiento de lenguaje natural
           </p>
         </header>
-        {/* ===== STATS ===== */}
+
+        {/* Stats */}
         <div
           style={{
             display: "grid",
@@ -1079,8 +1017,8 @@ export default function App() {
             </div>
           ))}
         </div>
-        {/* ===== SEARCH BOX ===== */}
-        // El div grande del search box:
+
+        {/* Search box */}
         <div
           style={{
             background: "linear-gradient(145deg, #0d0d22, #0a0a1a)",
@@ -1088,10 +1026,10 @@ export default function App() {
             borderRadius: 18,
             padding: "32px",
             marginBottom: 48,
-            position: "relative", // ← agregar
-            zIndex: 50, // ← agregar
             boxShadow: "0 24px 64px #00000055",
             animation: "fadeUp 0.6s ease 0.2s both",
+            position: "relative",
+            zIndex: 50,
           }}
         >
           <div style={{ display: "flex", gap: 8, marginBottom: 22 }}>
@@ -1158,7 +1096,8 @@ export default function App() {
             </div>
           )}
         </div>
-        {/* ===== LOADING ===== */}
+
+        {/* Loading */}
         {loading && (
           <div style={{ textAlign: "center", padding: "80px 0" }}>
             <div
@@ -1210,7 +1149,8 @@ export default function App() {
             </div>
           </div>
         )}
-        {/* ===== RESULTADOS ===== */}
+
+        {/* Resultados */}
         {!loading && resultados.length > 0 && (
           <div style={{ animation: "fadeUp 0.4s ease both" }}>
             <div
@@ -1269,7 +1209,6 @@ export default function App() {
                 }}
               />
             </div>
-
             <div className="grid">
               {resultados.map((juego, i) => (
                 <GameCard key={juego.app_id} game={juego} index={i} />
@@ -1277,10 +1216,10 @@ export default function App() {
             </div>
           </div>
         )}
-        {/* ===== EMPTY STATE ===== */}
+
+        {/* Empty state */}
         {!loading && resultados.length === 0 && !error && (
           <div style={{ animation: "fadeUp 0.6s ease 0.3s both" }}>
-            {/* Cómo funciona */}
             <div style={{ marginBottom: 48 }}>
               <h2
                 style={{
@@ -1313,11 +1252,7 @@ export default function App() {
                 }}
               >
                 {COMO_FUNCIONA.map((c, i) => (
-                  <div
-                    key={i}
-                    className="how-card"
-                    style={{ animationDelay: `${i * 0.1}s` }}
-                  >
+                  <div key={i} className="how-card">
                     <div style={{ fontSize: 28, marginBottom: 10 }}>
                       {c.icon}
                     </div>
@@ -1346,8 +1281,6 @@ export default function App() {
                 ))}
               </div>
             </div>
-
-            {/* CTA */}
             <div
               style={{
                 textAlign: "center",
