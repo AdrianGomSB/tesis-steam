@@ -17,7 +17,7 @@ from src.ml.recomendar__hibrido import recomendar_por_juego, recomendar_por_text
 # ---------------- APP ----------------
 app = FastAPI(
     title="API Sistema Recomendador Steam",
-    description="API para recomendaciones de videojuegos por juego base o descripción textual.",
+    description="API para recomendaciones de videojuegos por juego base o descripci�n textual.",
     version="2.0.0"
 )
 
@@ -28,13 +28,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Archivo donde guardamos el estado del último sync
+# Archivo donde guardamos el estado del �ltimo sync
 LOG_PATH = Path("src/api/sync_log.json")
 RUTA_MODELOS = Path("src/ml/modelos")
-BASE_DIR = Path(__file__).parent.parent.parent  # raíz del backend
+BASE_DIR = Path(__file__).parent.parent.parent  # ra�z del backend
 
 
-# ---------------- CONEXIÓN ----------------
+# ---------------- CONEXI�N ----------------
 def conectar():
     return psycopg2.connect(
         host=os.getenv("DB_HOST", "localhost"),
@@ -92,13 +92,13 @@ def correr_paso_node(script_npm: str, descripcion: str, log: dict) -> bool:
             return False
 
         log["pasos_completados"].append(descripcion)
-        print(f"[SYNC] ✓ {descripcion} completado")
+        print(f"[SYNC]  {descripcion} completado")
         return True
 
     except subprocess.TimeoutExpired:
         log["errores"].append({
             "paso": descripcion,
-            "error": "Timeout después de 30 minutos",
+            "error": "Timeout despu�s de 30 minutos",
             "timestamp": datetime.now().isoformat()
         })
         return False
@@ -117,7 +117,7 @@ def correr_paso_python(script: str, descripcion: str, log: dict) -> bool:
         resultado = subprocess.run(
             ["python", script],
             cwd=str(BASE_DIR),
-            capture_output=True, text=True, timeout=3600  # 1 hora max para vectorización
+            capture_output=True, text=True, timeout=3600  # 1 hora max para vectorizaci�n
         )
         if resultado.returncode != 0:
             log["errores"].append({
@@ -129,13 +129,13 @@ def correr_paso_python(script: str, descripcion: str, log: dict) -> bool:
             return False
 
         log["pasos_completados"].append(descripcion)
-        print(f"[SYNC] ✓ {descripcion} completado")
+        print(f"[SYNC]  {descripcion} completado")
         return True
 
     except subprocess.TimeoutExpired:
         log["errores"].append({
             "paso": descripcion,
-            "error": "Timeout después de 1 hora",
+            "error": "Timeout despu�s de 1 hora",
             "timestamp": datetime.now().isoformat()
         })
         return False
@@ -169,14 +169,14 @@ def ejecutar_pipeline_completo():
     5. Vectorizar con FAISS
     """
     inicio = datetime.now()
-    print(f"\n[SYNC] ====== PIPELINE AUTOMÁTICO INICIADO: {inicio.isoformat()} ======")
+    print(f"\n[SYNC] ====== PIPELINE AUTOM�TICO INICIADO: {inicio.isoformat()} ======")
 
     log = leer_log()
     log["ultimo_sync"] = inicio.isoformat()
     log["pasos_completados"] = []
     log["errores"] = []
 
-    # Calcular próximo sync (mañana a las 3am)
+    # Calcular pr�ximo sync (ma�ana a las 3am)
     manana_3am = (inicio + timedelta(days=1)).replace(hour=3, minute=0, second=0, microsecond=0)
     log["proximo_sync"] = manana_3am.isoformat()
 
@@ -189,7 +189,7 @@ def ejecutar_pipeline_completo():
         guardar_log(log)
         return
 
-    # Paso 2: Procesar juegos (máximo 100 por noche para no sobrecargar)
+    # Paso 2: Procesar juegos (m�ximo 100 por noche para no sobrecargar)
     ok = correr_paso_node("juegos:procesar", "Procesar detalles de juegos", log)
     if not ok:
         log["ultimo_resultado"] = "error_parcial"
@@ -225,7 +225,7 @@ def ejecutar_pipeline_completo():
 # ---------------- DRIFT DETECTION ----------------
 def calcular_metricas_drift() -> dict:
     """
-    Calcula métricas de salud del sistema para detectar data drift.
+    Calcula m�tricas de salud del sistema para detectar data drift.
     """
     try:
         conn = conectar()
@@ -256,7 +256,7 @@ def calcular_metricas_drift() -> dict:
         """)
         avg_reviews = float(cur.fetchone()[0] or 0)
 
-        # 5. Distribución de géneros
+        # 5. Distribuci�n de g�neros
         cur.execute("""
             SELECT generos_texto, COUNT(*) as cnt
             FROM features_juegos
@@ -267,7 +267,7 @@ def calcular_metricas_drift() -> dict:
         """)
         top_generos = [{"genero": r[0], "cantidad": r[1]} for r in cur.fetchall()]
 
-        # 6. Juegos con reviews útiles vs sin reviews
+        # 6. Juegos con reviews �tiles vs sin reviews
         cur.execute("""
             SELECT
                 SUM(CASE WHEN cantidad_reviews_usadas > 0 THEN 1 ELSE 0 END) as con_reviews,
@@ -278,7 +278,7 @@ def calcular_metricas_drift() -> dict:
         con_reviews = row[0] or 0
         sin_reviews = row[1] or 0
 
-        # 7. Sentimiento promedio del catálogo
+        # 7. Sentimiento promedio del cat�logo
         cur.execute("""
             SELECT
                 AVG(positivas::float / NULLIF(positivas + negativas, 0)) as sentimiento_promedio,
@@ -290,7 +290,7 @@ def calcular_metricas_drift() -> dict:
         sentimiento_promedio = float(row[0] or 0.5)
         reviews_promedio_comunidad = float(row[1] or 0)
 
-        # 8. Edad del índice FAISS
+        # 8. Edad del �ndice FAISS
         faiss_path = RUTA_MODELOS / "faiss.index"
         if faiss_path.exists():
             faiss_mtime = datetime.fromtimestamp(faiss_path.stat().st_mtime)
@@ -310,7 +310,7 @@ def calcular_metricas_drift() -> dict:
         if juegos_sin_features > 100:
             alertas.append({
                 "nivel": "rojo",
-                "mensaje": f"{juegos_sin_features} juegos sin features — recomendación degradada"
+                "mensaje": f"{juegos_sin_features} juegos sin features  recomendaci�n degradada"
             })
         elif juegos_sin_features > 30:
             alertas.append({
@@ -321,18 +321,18 @@ def calcular_metricas_drift() -> dict:
         if dias_desde_ultimo_faiss > 30:
             alertas.append({
                 "nivel": "rojo",
-                "mensaje": f"Índice FAISS tiene {dias_desde_ultimo_faiss} días sin regenerarse"
+                "mensaje": f"�ndice FAISS tiene {dias_desde_ultimo_faiss} d�as sin regenerarse"
             })
         elif dias_desde_ultimo_faiss > 7:
             alertas.append({
                 "nivel": "amarillo",
-                "mensaje": f"Índice FAISS tiene {dias_desde_ultimo_faiss} días sin actualizar"
+                "mensaje": f"�ndice FAISS tiene {dias_desde_ultimo_faiss} d�as sin actualizar"
             })
 
         if sentimiento_promedio < 0.5:
             alertas.append({
                 "nivel": "amarillo",
-                "mensaje": "Sentimiento promedio del catálogo por debajo del 50%"
+                "mensaje": "Sentimiento promedio del cat�logo por debajo del 50%"
             })
 
         if not alertas:
@@ -372,7 +372,7 @@ scheduler = BackgroundScheduler(timezone="America/Lima")
 
 scheduler.add_job(
     ejecutar_pipeline_completo,
-    trigger=CronTrigger(hour=3, minute=0),  # todos los días a las 3:00 AM
+    trigger=CronTrigger(hour=3, minute=0),  # todos los d�as a las 3:00 AM
     id="pipeline_sync",
     name="Pipeline completo Steam",
     replace_existing=True,
@@ -449,7 +449,7 @@ def recomendar_texto(data: RecomendarPorTextoRequest):
 
 @app.get("/api/admin/sync/estado")
 def estado_sync():
-    """Estado del último y próximo pipeline automático."""
+    """Estado del �ltimo y pr�ximo pipeline autom�tico."""
     log = leer_log()
     proximos = scheduler.get_jobs()
     proximo_job = proximos[0].next_run_time.isoformat() if proximos else None
@@ -477,7 +477,7 @@ def ejecutar_sync_manual():
 @app.get("/api/admin/drift")
 def reporte_drift():
     """
-    Reporte de salud del sistema y detección de data drift.
+    Reporte de salud del sistema y detecci�n de data drift.
     Incluye cobertura, calidad de features, estado de FAISS y alertas.
     """
     return calcular_metricas_drift()

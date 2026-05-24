@@ -53,10 +53,10 @@ function formatFecha(iso: string | null): string {
 
 function colorAlerta(nivel: string) {
   if (nivel === "verde")
-    return { bg: "#00ff9d0f", border: "#00ff9d33", text: "#00ff9d", icon: "✓" };
+    return { bg: "#00ff9d0f", border: "#00ff9d33", text: "#00ff9d", icon: "" };
   if (nivel === "amarillo")
-    return { bg: "#ffe6000f", border: "#ffe60033", text: "#ffe600", icon: "⚠" };
-  return { bg: "#ff4d6d0f", border: "#ff4d6d33", text: "#ff4d6d", icon: "✕" };
+    return { bg: "#ffe6000f", border: "#ffe60033", text: "#ffe600", icon: "�" };
+  return { bg: "#ff4d6d0f", border: "#ff4d6d33", text: "#ff4d6d", icon: "" };
 }
 
 function StatCard({
@@ -280,7 +280,7 @@ export default function AdminDashboard() {
                 >
                   GG.RECOMENDADOR
                 </span>
-                <span style={{ color: "#ffffff14" }}>›</span>
+                <span style={{ color: "#ffffff14" }}>:</span>
                 <span
                   style={{
                     fontSize: 11,
@@ -322,7 +322,7 @@ export default function AdminDashboard() {
                   textTransform: "uppercase",
                 }}
               >
-                ↻ Actualizar
+                � Actualizar
               </button>
               <button
                 onClick={ejecutarSync}
@@ -343,7 +343,7 @@ export default function AdminDashboard() {
                   textTransform: "uppercase",
                 }}
               >
-                {ejecutando ? "⏳ Ejecutando..." : "▶ Sync Manual"}
+                {ejecutando ? "� Ejecutando..." : "� Sync Manual"}
               </button>
             </div>
           </div>
@@ -359,7 +359,7 @@ export default function AdminDashboard() {
                 animation: "pulse 2s ease infinite",
               }}
             />
-            Actualización automática cada 30 segundos
+            Actualizaci�n autom�tica cada 30 segundos
           </div>
         </div>
 
@@ -369,13 +369,13 @@ export default function AdminDashboard() {
             className={`tab-btn ${tab === "drift" ? "active" : ""}`}
             onClick={() => setTab("drift")}
           >
-            📊 Salud del Sistema
+            =� Salud del Sistema
           </button>
           <button
             className={`tab-btn ${tab === "sync" ? "active" : ""}`}
             onClick={() => setTab("sync")}
           >
-            🔄 Estado del Pipeline
+            = Estado del Pipeline
           </button>
         </div>
 
@@ -398,7 +398,7 @@ export default function AdminDashboard() {
                 <p
                   style={{ color: "#ffffff33", fontSize: 12, letterSpacing: 2 }}
                 >
-                  CARGANDO MÉTRICAS...
+                  CARGANDO M�TRICAS...
                 </p>
               </div>
             ) : drift ? (
@@ -476,7 +476,7 @@ export default function AdminDashboard() {
                     label="Sentimiento"
                     value={`${drift.resumen.sentimiento_promedio_catalogo}%`}
                     color="#bf5af2"
-                    sub="promedio catálogo"
+                    sub="promedio cat�logo"
                   />
                   <StatCard
                     label="Reviews / juego"
@@ -533,7 +533,7 @@ export default function AdminDashboard() {
                         }}
                       >
                         <span style={{ fontSize: 13, color: "#ffffff66" }}>
-                          Con reviews útiles
+                          Con reviews �tiles
                         </span>
                         <span
                           style={{
@@ -581,7 +581,7 @@ export default function AdminDashboard() {
                   </div>
 
                   <div className="card">
-                    <div className="section-title">Estado del Índice FAISS</div>
+                    <div className="section-title">Estado del �ndice FAISS</div>
                     <div style={{ textAlign: "center", padding: "10px 0" }}>
                       <div
                         style={{
@@ -597,7 +597,7 @@ export default function AdminDashboard() {
                         }}
                       >
                         {drift.faiss.dias_desde_ultimo_rebuild === 999
-                          ? "∞"
+                          ? ""
                           : drift.faiss.dias_desde_ultimo_rebuild}
                       </div>
                       <div
@@ -609,7 +609,7 @@ export default function AdminDashboard() {
                           marginBottom: 12,
                         }}
                       >
-                        días desde último rebuild
+                        d�as desde �ltimo rebuild
                       </div>
                       <div
                         style={{
@@ -629,8 +629,8 @@ export default function AdminDashboard() {
                         }}
                       >
                         {drift.faiss.estado === "ok"
-                          ? "✓ Actualizado"
-                          : "⚠ Desactualizado"}
+                          ? " Actualizado"
+                          : "� Desactualizado"}
                       </div>
                       {drift.faiss.ultimo_rebuild && (
                         <div
@@ -640,17 +640,17 @@ export default function AdminDashboard() {
                             marginTop: 10,
                           }}
                         >
-                          Último: {formatFecha(drift.faiss.ultimo_rebuild)}
+                          �ltimo: {formatFecha(drift.faiss.ultimo_rebuild)}
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Top géneros */}
+                {/* Top g�neros */}
                 <div className="card">
                   <div className="section-title">
-                    Distribución de Géneros en el Catálogo
+                    Distribuci�n de G�neros en el Cat�logo
                   </div>
                   <div
                     style={{
@@ -679,7 +679,7 @@ export default function AdminDashboard() {
                             }}
                           >
                             <span style={{ fontSize: 13, color: "#ffffff88" }}>
-                              {g.genero || "Sin género"}
+                              {g.genero || "Sin g�nero"}
                             </span>
                             <span
                               style={{
@@ -710,7 +710,7 @@ export default function AdminDashboard() {
                     textAlign: "right",
                   }}
                 >
-                  Última actualización: {formatFecha(drift.timestamp)}
+                  �ltima actualizaci�n: {formatFecha(drift.timestamp)}
                 </div>
               </>
             ) : (
@@ -756,43 +756,43 @@ export default function AdminDashboard() {
                   }}
                 >
                   <StatCard
-                    label="Último sync"
+                    label="�ltimo sync"
                     value={
                       sync.ultimo_sync ? formatFecha(sync.ultimo_sync) : "Nunca"
                     }
                     color="#00b4ff"
                   />
                   <StatCard
-                    label="Próximo sync"
+                    label="Pr�ximo sync"
                     value={
                       sync.proximo_sync_scheduler
                         ? formatFecha(sync.proximo_sync_scheduler)
                         : "3:00 AM"
                     }
                     color="#ffe600"
-                    sub="automático diario"
+                    sub="autom�tico diario"
                   />
                   <StatCard
                     label="Juegos nuevos"
                     value={sync.juegos_nuevos_agregados}
                     color="#00ff9d"
-                    sub="último sync"
+                    sub="�ltimo sync"
                   />
                   <StatCard
-                    label="Duración"
+                    label="Duraci�n"
                     value={
                       sync.duracion_segundos
                         ? `${Math.floor(sync.duracion_segundos / 60)}m ${sync.duracion_segundos % 60}s`
-                        : "—"
+                        : ""
                     }
                     color="#bf5af2"
-                    sub="último pipeline"
+                    sub="�ltimo pipeline"
                   />
                 </div>
 
                 <div className="card" style={{ marginBottom: 20 }}>
                   <div className="section-title">
-                    Estado del último pipeline
+                    Estado del �ltimo pipeline
                   </div>
 
                   {sync.ultimo_resultado === "corriendo" && (
@@ -816,7 +816,7 @@ export default function AdminDashboard() {
                         }}
                       />
                       <span style={{ color: "#ffe600", fontSize: 14 }}>
-                        Pipeline ejecutándose...
+                        Pipeline ejecut�ndose...
                       </span>
                     </div>
                   )}
@@ -848,7 +848,7 @@ export default function AdminDashboard() {
                             marginBottom: 6,
                           }}
                         >
-                          <span style={{ color: "#00ff9d" }}>✓</span>
+                          <span style={{ color: "#00ff9d" }}></span>
                           <span style={{ fontSize: 13, color: "#ffffff88" }}>
                             {paso}
                           </span>
@@ -917,8 +917,8 @@ export default function AdminDashboard() {
 
                   {!sync.ultimo_resultado && (
                     <p style={{ color: "#ffffff33", fontSize: 13 }}>
-                      No se ha ejecutado ningún pipeline todavía. El primero
-                      correrá automáticamente a las 3:00 AM.
+                      No se ha ejecutado ning�n pipeline todav�a. El primero
+                      correr� autom�ticamente a las 3:00 AM.
                     </p>
                   )}
                 </div>
@@ -934,7 +934,7 @@ export default function AdminDashboard() {
                     gap: 12,
                   }}
                 >
-                  <span style={{ fontSize: 20 }}>🕐</span>
+                  <span style={{ fontSize: 20 }}>=P</span>
                   <div>
                     <div
                       style={{
@@ -944,7 +944,7 @@ export default function AdminDashboard() {
                         marginBottom: 4,
                       }}
                     >
-                      Pipeline automático programado
+                      Pipeline autom�tico programado
                     </div>
                     <div
                       style={{
@@ -953,13 +953,13 @@ export default function AdminDashboard() {
                         lineHeight: 1.6,
                       }}
                     >
-                      El pipeline corre todos los días a las{" "}
+                      El pipeline corre todos los d�as a las{" "}
                       <strong style={{ color: "#ffe600" }}>
                         3:00 AM (hora Lima)
                       </strong>{" "}
-                      mientras la API esté activa. Descarga nuevos juegos,
-                      procesa reviews, regenera features y actualiza el índice
-                      FAISS automáticamente.
+                      mientras la API est� activa. Descarga nuevos juegos,
+                      procesa reviews, regenera features y actualiza el �ndice
+                      FAISS autom�ticamente.
                     </div>
                   </div>
                 </div>

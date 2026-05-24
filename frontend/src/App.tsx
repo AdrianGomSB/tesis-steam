@@ -26,7 +26,7 @@ interface JuegoSugerido {
 const API_BASE = "http://localhost:8000";
 
 const STATS_POPULARES = [
-  { label: "Juegos en catálogo", value: "2,000+" },
+  { label: "Juegos en cat�logo", value: "2,000+" },
   { label: "Modelos de IA", value: "3" },
   { label: "Reviews analizadas", value: "500K+" },
   { label: "Idiomas soportados", value: "50+" },
@@ -34,24 +34,24 @@ const STATS_POPULARES = [
 
 const COMO_FUNCIONA = [
   {
-    icon: "🔍",
-    titulo: "Vectorización",
-    desc: "Cada juego se convierte en un vector de 384 dimensiones usando NLP multilingüe.",
+    icon: "=",
+    titulo: "Vectorizaci�n",
+    desc: "Cada juego se convierte en un vector de 384 dimensiones usando NLP multiling�e.",
   },
   {
-    icon: "⚡",
-    titulo: "Búsqueda FAISS",
-    desc: "Encontramos los 40 candidatos más cercanos en milisegundos con índice vectorial.",
+    icon: "�",
+    titulo: "B�squeda FAISS",
+    desc: "Encontramos los 40 candidatos m�s cercanos en milisegundos con �ndice vectorial.",
   },
   {
-    icon: "🧠",
+    icon: ">�",
     titulo: "Cross-Encoder",
-    desc: "Un modelo reordena los candidatos evaluando la relevancia semántica par a par.",
+    desc: "Un modelo reordena los candidatos evaluando la relevancia sem�ntica par a par.",
   },
   {
-    icon: "🎯",
-    titulo: "Score híbrido",
-    desc: "Combinamos semántica, tags, sentimiento y popularidad en un score final.",
+    icon: "<�",
+    titulo: "Score h�brido",
+    desc: "Combinamos sem�ntica, tags, sentimiento y popularidad en un score final.",
   },
 ];
 
@@ -190,11 +190,11 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
 
   const rankLabel =
     index === 0
-      ? "🥇"
+      ? ">G"
       : index === 1
-        ? "🥈"
+        ? ">H"
         : index === 2
-          ? "🥉"
+          ? ">I"
           : `#${index + 1}`;
   const pct = Math.round(game.score * 100);
   const scoreColor = pct >= 65 ? "#00ff9d" : pct >= 45 ? "#ffe600" : "#ff4d6d";
@@ -251,7 +251,7 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
               fontSize: 40,
             }}
           >
-            🎮
+            <�
           </div>
         )}
         <div
@@ -316,7 +316,7 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
           >
             APP {game.app_id}
           </span>
-          <span style={{ color: "#ffffff22", fontSize: 10 }}>•</span>
+          <span style={{ color: "#ffffff22", fontSize: 10 }}>"</span>
           <a
             href={storeUrl}
             target="_blank"
@@ -330,7 +330,7 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
             onMouseEnter={(e) => (e.currentTarget.style.color = "#66d4ff")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "#00b4ff")}
           >
-            Ver en Steam ↗
+            Ver en Steam �
           </a>
         </div>
 
@@ -348,12 +348,13 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 18, marginBottom: 2 }}>
               {game.metricas.sentimiento >= 0.8
-                ? "😍"
+                ? "="
                 : game.metricas.sentimiento >= 0.6
-                  ? "😊"
+                  ? "=
+"
                   : game.metricas.sentimiento >= 0.5
-                    ? "😐"
-                    : "😕"}
+                    ? "="
+                    : "="}
             </div>
             <div
               style={{
@@ -369,7 +370,7 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
             </div>
           </div>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 18, marginBottom: 2 }}>📈</div>
+            <div style={{ fontSize: 18, marginBottom: 2 }}>=�</div>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#bf5af2" }}>
               {(game.metricas.popularidad * 100).toFixed(0)}%
             </div>
@@ -410,8 +411,8 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
             (e.currentTarget as HTMLButtonElement).style.color = "#ffffff55";
           }}
         >
-          <span>{expanded ? "▲" : "▼"}</span>
-          <span>{expanded ? "Ocultar métricas IA" : "Ver métricas IA"}</span>
+          <span>{expanded ? "�" : "�"}</span>
+          <span>{expanded ? "Ocultar m�tricas IA" : "Ver m�tricas IA"}</span>
         </button>
 
         {expanded && (
@@ -425,7 +426,7 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
             }}
           >
             <MetricBar
-              label="Semántica"
+              label="Sem�ntica"
               value={game.metricas.semantica}
               color="#00ff9d"
             />
@@ -443,14 +444,14 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
             )}
             {game.metricas.jaccard_generos !== undefined && (
               <MetricBar
-                label="Géneros"
+                label="G�neros"
                 value={game.metricas.jaccard_generos}
                 color="#ff9500"
               />
             )}
             {game.metricas.jaccard_categorias !== undefined && (
               <MetricBar
-                label="Categorías"
+                label="Categor�as"
                 value={game.metricas.jaccard_categorias}
                 color="#ff6b35"
               />
@@ -582,7 +583,7 @@ function AutocompleteJuego({
               padding: 0,
             }}
           >
-            ×
+            �
           </button>
         )}
       </div>
@@ -663,7 +664,7 @@ function AutocompleteJuego({
               display: "inline-block",
             }}
           >
-            ✓ App ID {seleccionado.app_id} seleccionado
+             App ID {seleccionado.app_id} seleccionado
           </span>
         </div>
       )}
@@ -686,7 +687,7 @@ export default function App() {
       return;
     }
     if (modo === "texto" && !consulta.trim()) {
-      setError("Escribe una descripción.");
+      setError("Escribe una descripci�n.");
       return;
     }
     setLoading(true);
@@ -713,7 +714,7 @@ export default function App() {
       setResultados(data.recomendaciones ?? data);
     } catch {
       setError(
-        "No se pudo conectar con la API. ¿Está corriendo en localhost:8000?",
+        "No se pudo conectar con la API. �Est� corriendo en localhost:8000?",
       );
     } finally {
       setLoading(false);
@@ -948,7 +949,7 @@ export default function App() {
                 animation: "scanPulse 2s ease infinite",
               }}
             />
-            Sistema de Recomendación · NLP + IA
+            Sistema de Recomendaci�n � NLP + IA
           </div>
 
           <h1
@@ -975,7 +976,7 @@ export default function App() {
               lineHeight: 1.6,
             }}
           >
-            Descubre tu próximo juego favorito con inteligencia artificial y
+            Descubre tu pr�ximo juego favorito con inteligencia artificial y
             procesamiento de lenguaje natural
           </p>
         </header>
@@ -1037,13 +1038,13 @@ export default function App() {
               className={`btn-mode ${modo === "juego" ? "active" : ""}`}
               onClick={() => cambiarModo("juego")}
             >
-              🎮 Por Nombre
+              <� Por Nombre
             </button>
             <button
               className={`btn-mode ${modo === "texto" ? "active" : ""}`}
               onClick={() => cambiarModo("texto")}
             >
-              💬 Por Descripción
+              =� Por Descripci�n
             </button>
           </div>
 
@@ -1068,7 +1069,7 @@ export default function App() {
               <input
                 className="gg-input"
                 type="text"
-                placeholder='Ej: "shooter táctico multijugador competitivo", "RPG de fantasía con magia"...'
+                placeholder='Ej: "shooter t�ctico multijugador competitivo", "RPG de fantas�a con magia"...'
                 value={consulta}
                 onChange={(e) => setConsulta(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && buscar()}
@@ -1076,7 +1077,7 @@ export default function App() {
               />
             )}
             <button className="btn-buscar" onClick={buscar} disabled={loading}>
-              {loading ? "⏳ Analizando..." : "BUSCAR →"}
+              {loading ? "� Analizando..." : "BUSCAR �"}
             </button>
           </div>
 
@@ -1092,7 +1093,7 @@ export default function App() {
                 padding: "10px 14px",
               }}
             >
-              ⚠ {error}
+              � {error}
             </div>
           )}
         </div>
@@ -1232,7 +1233,7 @@ export default function App() {
                   letterSpacing: 1,
                 }}
               >
-                ¿Cómo funciona?
+                �C�mo funciona?
               </h2>
               <p
                 style={{
@@ -1242,7 +1243,7 @@ export default function App() {
                   marginBottom: 28,
                 }}
               >
-                Pipeline de recomendación híbrida con 3 modelos de IA
+                Pipeline de recomendaci�n h�brida con 3 modelos de IA
               </p>
               <div
                 style={{
@@ -1290,7 +1291,7 @@ export default function App() {
                 borderRadius: 16,
               }}
             >
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🎮</div>
+              <div style={{ fontSize: 48, marginBottom: 12 }}><�</div>
               <p
                 style={{
                   fontFamily: "'Rajdhani', sans-serif",
