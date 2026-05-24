@@ -2,7 +2,6 @@ import os
 import json
 import subprocess
 import psycopg2
-import numpy as np
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -17,24 +16,51 @@ from src.ml.recomendar__hibrido import recomendar_por_juego, recomendar_por_text
 # ---------------- APP ----------------
 app = FastAPI(
     title="API Sistema Recomendador Steam",
-    description="API para recomendaciones de videojuegos por juego base o descripci�n textual.",
+    description="API para recomendaciones de videojuegos por juego base o descripcion textual.",
     version="2.0.0"
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Archivo donde guardamos el estado del �ltimo sync
+# Archivo donde guardamos el estado del ultimo sync
 LOG_PATH = Path("src/api/sync_log.json")
 RUTA_MODELOS = Path("src/ml/modelos")
-BASE_DIR = Path(__file__).parent.parent.parent  # ra�z del backend
+BASE_DIR = Path(__file__).parent.parent.parent  # raiz del backend
 
 
-# ---------------- CONEXI�N ----------------
+# ---------------- CONEXION ----------------
+def limpiar_texto_mojibake(texto: str | None) -> str | None:
+    if texto is None:
+        return None
+    reemplazos = {
+        "Ã¡": "a",
+        "Ã©": "e",
+        "Ã­": "i",
+        "Ã³": "o",
+        "Ãº": "u",
+        "Ã±": "n",
+        "Ã": "A",
+        "Ã‰": "E",
+        "Ã": "I",
+        "Ã“": "O",
+        "Ãš": "U",
+        "Ã‘": "N",
+    }
+    for origen, destino in reemplazos.items():
+        texto = texto.replace(origen, destino)
+    return texto
+
+
 def conectar():
     return psycopg2.connect(
         host=os.getenv("DB_HOST", "localhost"),
@@ -77,10 +103,15 @@ def correr_paso_node(script_npm: str, descripcion: str, log: dict) -> bool:
     """Corre un paso del pipeline Node (npm run ...)"""
     print(f"[SYNC] Ejecutando: {descripcion}...")
     try:
+        npm_cmd = "npm.cmd" if os.name == "nt" else "npm"
         resultado = subprocess.run(
-            ["npm", "run", script_npm],
+            [npm_cmd, "run", script_npm],
             cwd=str(BASE_DIR),
-            capture_output=True, text=True, timeout=1800  # 30 min max
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=1800,  # 30 min max
         )
         if resultado.returncode != 0:
             log["errores"].append({
@@ -98,7 +129,7 @@ def correr_paso_node(script_npm: str, descripcion: str, log: dict) -> bool:
     except subprocess.TimeoutExpired:
         log["errores"].append({
             "paso": descripcion,
-            "error": "Timeout despu�s de 30 minutos",
+            "error": "Timeout despues de 30 minutos",
             "timestamp": datetime.now().isoformat()
         })
         return False
@@ -117,7 +148,11 @@ def correr_paso_python(script: str, descripcion: str, log: dict) -> bool:
         resultado = subprocess.run(
             ["python", script],
             cwd=str(BASE_DIR),
-            capture_output=True, text=True, timeout=3600  # 1 hora max para vectorizaci�n
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=3600,  # 1 hora max para vectorizacion
         )
         if resultado.returncode != 0:
             log["errores"].append({
@@ -135,7 +170,7 @@ def correr_paso_python(script: str, descripcion: str, log: dict) -> bool:
     except subprocess.TimeoutExpired:
         log["errores"].append({
             "paso": descripcion,
-            "error": "Timeout despu�s de 1 hora",
+            "error": "Timeout despues de 1 hora",
             "timestamp": datetime.now().isoformat()
         })
         return False
@@ -169,27 +204,27 @@ def ejecutar_pipeline_completo():
     5. Vectorizar con FAISS
     """
     inicio = datetime.now()
-    print(f"\n[SYNC] ====== PIPELINE AUTOM�TICO INICIADO: {inicio.isoformat()} ======")
+    print(f"\n[SYNC] ====== PIPELINE AUTOMATICO INICIADO: {inicio.isoformat()} ======")
 
     log = leer_log()
     log["ultimo_sync"] = inicio.isoformat()
     log["pasos_completados"] = []
     log["errores"] = []
 
-    # Calcular pr�ximo sync (ma�ana a las 3am)
+    # Calcular proximo sync (manana a las 3am)
     manana_3am = (inicio + timedelta(days=1)).replace(hour=3, minute=0, second=0, microsecond=0)
     log["proximo_sync"] = manana_3am.isoformat()
 
     juegos_antes = contar_juegos_antes()
 
     # Paso 1: Cargar semilla
-    ok = correr_paso_node("semilla:cargar", "Cargar semilla Steam", log)
+    ok = correr_paso_node("seed:cargar", "Cargar semilla Steam", log)
     if not ok:
         log["ultimo_resultado"] = "error"
         guardar_log(log)
         return
 
-    # Paso 2: Procesar juegos (m�ximo 100 por noche para no sobrecargar)
+    # Paso 2: Procesar juegos (maximo 100 por noche para no sobrecargar)
     ok = correr_paso_node("juegos:procesar", "Procesar detalles de juegos", log)
     if not ok:
         log["ultimo_resultado"] = "error_parcial"
@@ -225,7 +260,7 @@ def ejecutar_pipeline_completo():
 # ---------------- DRIFT DETECTION ----------------
 def calcular_metricas_drift() -> dict:
     """
-    Calcula m�tricas de salud del sistema para detectar data drift.
+    Calcula metricas de salud del sistema para detectar data drift.
     """
     try:
         conn = conectar()
@@ -256,7 +291,7 @@ def calcular_metricas_drift() -> dict:
         """)
         avg_reviews = float(cur.fetchone()[0] or 0)
 
-        # 5. Distribuci�n de g�neros
+        # 5. Distribucion de generos
         cur.execute("""
             SELECT generos_texto, COUNT(*) as cnt
             FROM features_juegos
@@ -265,9 +300,12 @@ def calcular_metricas_drift() -> dict:
             ORDER BY cnt DESC
             LIMIT 10
         """)
-        top_generos = [{"genero": r[0], "cantidad": r[1]} for r in cur.fetchall()]
+        top_generos = [
+            {"genero": limpiar_texto_mojibake(r[0]), "cantidad": r[1]}
+            for r in cur.fetchall()
+        ]
 
-        # 6. Juegos con reviews �tiles vs sin reviews
+        # 6. Juegos con reviews utiles vs sin reviews
         cur.execute("""
             SELECT
                 SUM(CASE WHEN cantidad_reviews_usadas > 0 THEN 1 ELSE 0 END) as con_reviews,
@@ -278,19 +316,19 @@ def calcular_metricas_drift() -> dict:
         con_reviews = row[0] or 0
         sin_reviews = row[1] or 0
 
-        # 7. Sentimiento promedio del cat�logo
+        # 7. Sentimiento promedio del catalogo
         cur.execute("""
             SELECT
-                AVG(positivas::float / NULLIF(positivas + negativas, 0)) as sentimiento_promedio,
-                AVG(positivas + negativas) as reviews_promedio
+                AVG(steamspy_positive::float / NULLIF(steamspy_positive + steamspy_negative, 0)) as sentimiento_promedio,
+                AVG(steamspy_positive + steamspy_negative) as reviews_promedio
             FROM juegos
-            WHERE positivas IS NOT NULL
+            WHERE steamspy_positive IS NOT NULL
         """)
         row = cur.fetchone()
         sentimiento_promedio = float(row[0] or 0.5)
         reviews_promedio_comunidad = float(row[1] or 0)
 
-        # 8. Edad del �ndice FAISS
+        # 8. Edad del Indice FAISS
         faiss_path = RUTA_MODELOS / "faiss.index"
         if faiss_path.exists():
             faiss_mtime = datetime.fromtimestamp(faiss_path.stat().st_mtime)
@@ -310,7 +348,7 @@ def calcular_metricas_drift() -> dict:
         if juegos_sin_features > 100:
             alertas.append({
                 "nivel": "rojo",
-                "mensaje": f"{juegos_sin_features} juegos sin features  recomendaci�n degradada"
+                "mensaje": f"{juegos_sin_features} juegos sin features - recomendacion degradada"
             })
         elif juegos_sin_features > 30:
             alertas.append({
@@ -321,18 +359,18 @@ def calcular_metricas_drift() -> dict:
         if dias_desde_ultimo_faiss > 30:
             alertas.append({
                 "nivel": "rojo",
-                "mensaje": f"�ndice FAISS tiene {dias_desde_ultimo_faiss} d�as sin regenerarse"
+                "mensaje": f"Indice FAISS tiene {dias_desde_ultimo_faiss} dias sin regenerarse"
             })
         elif dias_desde_ultimo_faiss > 7:
             alertas.append({
                 "nivel": "amarillo",
-                "mensaje": f"�ndice FAISS tiene {dias_desde_ultimo_faiss} d�as sin actualizar"
+                "mensaje": f"Indice FAISS tiene {dias_desde_ultimo_faiss} dias sin actualizar"
             })
 
         if sentimiento_promedio < 0.5:
             alertas.append({
                 "nivel": "amarillo",
-                "mensaje": "Sentimiento promedio del cat�logo por debajo del 50%"
+                "mensaje": "Sentimiento promedio del catalogo por debajo del 50%"
             })
 
         if not alertas:
@@ -372,7 +410,7 @@ scheduler = BackgroundScheduler(timezone="America/Lima")
 
 scheduler.add_job(
     ejecutar_pipeline_completo,
-    trigger=CronTrigger(hour=3, minute=0),  # todos los d�as a las 3:00 AM
+    trigger=CronTrigger(hour=3, minute=0),  # todos los dias a las 3:00 AM
     id="pipeline_sync",
     name="Pipeline completo Steam",
     replace_existing=True,
@@ -429,6 +467,98 @@ def buscar_juegos(q: str = Query(default="", min_length=0), limite: int = 8):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/juegos/catalogo")
+@app.get("/api/juegos/marketplace")
+def listar_juegos_catalogo(
+    q: str = Query(default="", min_length=0),
+    genero: str = Query(default="Todos"),
+    limite: int = Query(default=24, ge=1, le=60),
+):
+    try:
+        filtros = ["tipo = 'game'"]
+        params = []
+
+        if q.strip():
+            params.append(f"%{q.strip()}%")
+            filtros.append(f"nombre ILIKE %s")
+
+        if genero and genero != "Todos":
+            params.append(genero)
+            filtros.append("%s = ANY(generos)")
+
+        params.append(limite)
+        where_sql = " AND ".join(filtros)
+
+        conn = conectar()
+        cur = conn.cursor()
+        cur.execute(
+            f"""
+            SELECT
+                steam_app_id,
+                nombre,
+                es_gratis,
+                precio_final,
+                porcentaje_descuento,
+                generos,
+                tags,
+                steamspy_positive,
+                steamspy_negative,
+                steamspy_ccu
+            FROM juegos
+            WHERE {where_sql}
+            ORDER BY COALESCE(steamspy_ccu, 0) DESC NULLS LAST, nombre
+            LIMIT %s
+            """,
+            params,
+        )
+        rows = cur.fetchall()
+
+        cur.execute(
+            """
+            SELECT
+                COUNT(*)::int AS total_juegos,
+                SUM(CASE WHEN es_gratis THEN 1 ELSE 0 END)::int AS total_gratis,
+                SUM(CASE WHEN COALESCE(steamspy_ccu, 0) > 0 THEN 1 ELSE 0 END)::int AS total_con_actividad
+            FROM juegos
+            WHERE tipo = 'game'
+            """
+        )
+        stats_row = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        juegos = []
+        for row in rows:
+            positivos = int(row[7] or 0)
+            negativos = int(row[8] or 0)
+            total_reviews = positivos + negativos
+            rating = round((positivos / total_reviews) * 100) if total_reviews else None
+            juegos.append({
+                "app_id": row[0],
+                "nombre": row[1],
+                "es_gratis": bool(row[2]),
+                "precio_final": int(row[3]) if row[3] is not None else None,
+                "porcentaje_descuento": int(row[4] or 0),
+                "generos": row[5] or [],
+                "tags": row[6] or [],
+                "rating": rating,
+                "jugadores_actuales": int(row[9] or 0),
+            })
+
+        return {
+            "ok": True,
+            "juegos": juegos,
+            "resumen": {
+                "total_juegos": stats_row[0] or 0,
+                "total_gratis": stats_row[1] or 0,
+                "total_con_actividad": stats_row[2] or 0,
+                "mostrando": len(juegos),
+            },
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/api/recomendar/por-juego")
 def recomendar_juego(data: RecomendarPorJuegoRequest):
     try:
@@ -449,8 +579,11 @@ def recomendar_texto(data: RecomendarPorTextoRequest):
 
 @app.get("/api/admin/sync/estado")
 def estado_sync():
-    """Estado del �ltimo y pr�ximo pipeline autom�tico."""
+    """Estado del ultimo y proximo pipeline automatico."""
     log = leer_log()
+    if log.get("ultimo_resultado") == "corriendo" and log.get("errores"):
+        log["ultimo_resultado"] = "error"
+        guardar_log(log)
     proximos = scheduler.get_jobs()
     proximo_job = proximos[0].next_run_time.isoformat() if proximos else None
     return {**log, "proximo_sync_scheduler": proximo_job}
@@ -477,7 +610,7 @@ def ejecutar_sync_manual():
 @app.get("/api/admin/drift")
 def reporte_drift():
     """
-    Reporte de salud del sistema y detecci�n de data drift.
+    Reporte de salud del sistema y deteccion de data drift.
     Incluye cobertura, calidad de features, estado de FAISS y alertas.
     """
     return calcular_metricas_drift()

@@ -1,0 +1,15 @@
+{
+  "ultimo_sync": "2026-05-24T13:55:12.925529",
+  "proximo_sync": "2026-05-25T03:00:00",
+  "ultimo_resultado": "error",
+  "errores": [
+    {
+      "paso": "Cargar semilla Steam",
+      "error": "[WinError 2] El sistema no puede encontrar el archivo especificado",
+      "timestamp": "2026-05-24T13:55:12.979509"
+    }
+  ],
+  "pasos_completados": [],
+  "juegos_nuevos_agregados": 0,
+  "duracion_segundos": 0
+}

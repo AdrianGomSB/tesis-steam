@@ -23,10 +23,29 @@ interface JuegoSugerido {
   nombre: string;
 }
 
+interface CatalogoGame {
+  app_id: number;
+  nombre: string;
+  es_gratis: boolean;
+  precio_final: number | null;
+  porcentaje_descuento: number;
+  generos: string[];
+  tags: string[];
+  rating: number | null;
+  jugadores_actuales: number;
+}
+
+interface CatalogoResumen {
+  total_juegos: number;
+  total_gratis: number;
+  total_con_actividad: number;
+  mostrando: number;
+}
+
 const API_BASE = "http://localhost:8000";
 
 const STATS_POPULARES = [
-  { label: "Juegos en cat�logo", value: "2,000+" },
+  { label: "Juegos en catalogo", value: "2,000+" },
   { label: "Modelos de IA", value: "3" },
   { label: "Reviews analizadas", value: "500K+" },
   { label: "Idiomas soportados", value: "50+" },
@@ -34,26 +53,27 @@ const STATS_POPULARES = [
 
 const COMO_FUNCIONA = [
   {
-    icon: "=",
-    titulo: "Vectorizaci�n",
-    desc: "Cada juego se convierte en un vector de 384 dimensiones usando NLP multiling�e.",
+    icon: "Search",
+    titulo: "Vectorizacion",
+    desc: "Cada juego se convierte en un vector de 384 dimensiones usando NLP multilingue.",
   },
   {
-    icon: "�",
-    titulo: "B�squeda FAISS",
-    desc: "Encontramos los 40 candidatos m�s cercanos en milisegundos con �ndice vectorial.",
+    icon: "Fast",
+    titulo: "Busqueda FAISS",
+    desc: "Encontramos los 40 candidatos mas cercanos en milisegundos con indice vectorial.",
   },
   {
-    icon: ">�",
+    icon: "AI",
     titulo: "Cross-Encoder",
-    desc: "Un modelo reordena los candidatos evaluando la relevancia sem�ntica par a par.",
+    desc: "Un modelo reordena los candidatos evaluando la relevancia semantica par a par.",
   },
   {
-    icon: "<�",
-    titulo: "Score h�brido",
-    desc: "Combinamos sem�ntica, tags, sentimiento y popularidad en un score final.",
+    icon: "Score",
+    titulo: "Score hibrido",
+    desc: "Combinamos semantica, tags, sentimiento y popularidad en un score final.",
   },
 ];
+
 
 function ScoreRing({ score, size = 80 }: { score: number; size?: number }) {
   const pct = Math.round(score * 100);
@@ -188,14 +208,6 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
   const imgUrl = `https://cdn.akamai.steamstatic.com/steam/apps/${game.app_id}/header.jpg`;
   const storeUrl = `https://store.steampowered.com/app/${game.app_id}`;
 
-  const rankLabel =
-    index === 0
-      ? ">G"
-      : index === 1
-        ? ">H"
-        : index === 2
-          ? ">I"
-          : `#${index + 1}`;
   const pct = Math.round(game.score * 100);
   const scoreColor = pct >= 65 ? "#00ff9d" : pct >= 45 ? "#ffe600" : "#ff4d6d";
 
@@ -251,7 +263,7 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
               fontSize: 40,
             }}
           >
-            <�
+            GAME
           </div>
         )}
         <div
@@ -271,12 +283,15 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
             backdropFilter: "blur(8px)",
             borderRadius: 8,
             padding: "4px 10px",
-            fontSize: 13,
+            fontSize: 11,
             fontWeight: 800,
             border: "1px solid #ffffff22",
+            color: "#ffe600",
+            letterSpacing: 1,
+            textTransform: "uppercase",
           }}
         >
-          {rankLabel}
+          Match IA
         </div>
         <div style={{ position: "absolute", top: 8, right: 8 }}>
           <ScoreRing score={game.score} size={72} />
@@ -330,7 +345,7 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
             onMouseEnter={(e) => (e.currentTarget.style.color = "#66d4ff")}
             onMouseLeave={(e) => (e.currentTarget.style.color = "#00b4ff")}
           >
-            Ver en Steam �
+            Ver en Steam
           </a>
         </div>
 
@@ -348,13 +363,12 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 18, marginBottom: 2 }}>
               {game.metricas.sentimiento >= 0.8
-                ? "="
+                ? "Excelente"
                 : game.metricas.sentimiento >= 0.6
-                  ? "=
-"
+                  ? "Bueno"
                   : game.metricas.sentimiento >= 0.5
-                    ? "="
-                    : "="}
+                    ? "Neutro"
+                    : "Bajo"}
             </div>
             <div
               style={{
@@ -370,7 +384,7 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
             </div>
           </div>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 18, marginBottom: 2 }}>=�</div>
+            <div style={{ fontSize: 18, marginBottom: 2 }}>Popular</div>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#bf5af2" }}>
               {(game.metricas.popularidad * 100).toFixed(0)}%
             </div>
@@ -411,8 +425,8 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
             (e.currentTarget as HTMLButtonElement).style.color = "#ffffff55";
           }}
         >
-          <span>{expanded ? "�" : "�"}</span>
-          <span>{expanded ? "Ocultar m�tricas IA" : "Ver m�tricas IA"}</span>
+          <span>{expanded ? "^" : "v"}</span>
+          <span>{expanded ? "Ocultar metricas IA" : "Ver metricas IA"}</span>
         </button>
 
         {expanded && (
@@ -426,7 +440,7 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
             }}
           >
             <MetricBar
-              label="Sem�ntica"
+              label="Semantica"
               value={game.metricas.semantica}
               color="#00ff9d"
             />
@@ -444,14 +458,14 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
             )}
             {game.metricas.jaccard_generos !== undefined && (
               <MetricBar
-                label="G�neros"
+                label="Generos"
                 value={game.metricas.jaccard_generos}
                 color="#ff9500"
               />
             )}
             {game.metricas.jaccard_categorias !== undefined && (
               <MetricBar
-                label="Categor�as"
+                label="Categorias"
                 value={game.metricas.jaccard_categorias}
                 color="#ff6b35"
               />
@@ -460,6 +474,399 @@ function GameCard({ game, index }: { game: Recomendacion; index: number }) {
         )}
       </div>
     </div>
+  );
+}
+
+function CatalogoSteamView() {
+  const [categoria, setCategoria] = useState("Todos");
+  const [query, setQuery] = useState("");
+  const [catalogGames, setCatalogGames] = useState<CatalogoGame[]>([]);
+  const [catalogResumen, setCatalogResumen] = useState<CatalogoResumen | null>(
+    null,
+  );
+  const [loadingMarket, setLoadingMarket] = useState(true);
+  const [marketError, setMarketError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setLoadingMarket(true);
+      setMarketError("");
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/juegos/catalogo?q=${encodeURIComponent(query)}&limite=48`,
+          { signal: controller.signal },
+        );
+        if (!res.ok) throw new Error(`Error ${res.status}`);
+        const data = await res.json();
+        setCatalogGames(data.juegos ?? []);
+        setCatalogResumen(data.resumen ?? null);
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setMarketError("No se pudo cargar el catalogo analizado desde la base de datos.");
+          setCatalogGames([]);
+          setCatalogResumen(null);
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoadingMarket(false);
+      }
+    }, 250);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [query]);
+
+  const normalizar = (valor: string) =>
+    valor.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  const limpiarTextoSteam = (valor: string) =>
+    valor
+      .replace(/Ã¡/g, "a")
+      .replace(/Ã©/g, "e")
+      .replace(/Ã­/g, "i")
+      .replace(/Ã³/g, "o")
+      .replace(/Ãº/g, "u")
+      .replace(/Ã±/g, "n")
+      .replace(/Ã/g, "A")
+      .replace(/Ã‰/g, "E")
+      .replace(/Ã/g, "I")
+      .replace(/Ã“/g, "O")
+      .replace(/Ãš/g, "U")
+      .replace(/Ã‘/g, "N");
+
+  const categorias = [
+    "Todos",
+    ...Array.from(
+      new Set(
+        catalogGames.flatMap((game) =>
+          game.generos.map((genero) => normalizar(limpiarTextoSteam(genero))),
+        ),
+      ),
+    ).slice(0, 8),
+  ];
+
+  const juegosVisibles =
+    categoria === "Todos"
+      ? catalogGames
+      : catalogGames.filter((game) =>
+          game.generos.some(
+            (genero) => normalizar(limpiarTextoSteam(genero)) === categoria,
+          ),
+        );
+
+  const getBadge = (game: CatalogoGame) => {
+    if (game.es_gratis) return "Free to Play";
+    if (game.jugadores_actuales > 0) {
+      return `${game.jugadores_actuales.toLocaleString("es-PE")} online`;
+    }
+    return "Analizado";
+  };
+
+  return (
+    <section style={{ animation: "fadeUp 0.4s ease both" }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1.35fr) minmax(260px, 0.65fr)",
+          gap: 22,
+          marginBottom: 24,
+        }}
+        className="market-hero"
+      >
+        <div
+          style={{
+            minHeight: 260,
+            borderRadius: 18,
+            border: "1px solid #ffffff12",
+            background:
+              "linear-gradient(135deg, #151525 0%, #101025 45%, #2c1830 100%)",
+            padding: 28,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            overflow: "hidden",
+            position: "relative",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundImage:
+                "linear-gradient(90deg, #ffffff08 1px, transparent 1px), linear-gradient(#ffffff06 1px, transparent 1px)",
+              backgroundSize: "42px 42px",
+              opacity: 0.45,
+            }}
+          />
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <div
+              style={{
+                color: "#00ff9d",
+                fontSize: 12,
+                letterSpacing: 2,
+                textTransform: "uppercase",
+                marginBottom: 12,
+              }}
+            >
+              GG Recommender
+            </div>
+            <h2
+              style={{
+                fontFamily: "'Rajdhani', sans-serif",
+                fontSize: 44,
+                lineHeight: 1,
+                color: "#fff",
+                maxWidth: 560,
+                marginBottom: 12,
+              }}
+            >
+              Catalogo inteligente de juegos analizados
+            </h2>
+            <p style={{ color: "#ffffff66", fontSize: 15, maxWidth: 520 }}>
+              Explora juegos alimentados desde APIs de Steam y SteamSpy:
+              generos, tags, sentimiento, popularidad y actividad de comunidad.
+            </p>
+            <input
+              className="gg-input"
+              type="text"
+              placeholder='Buscar juegos analizados: "Dota", "survival", "RPG"...'
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              style={{ maxWidth: 460, marginTop: 18 }}
+            />
+          </div>
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap",
+              marginTop: 24,
+            }}
+          >
+            {["Datos Steam", "NLP + IA", "Sentimiento", "Mas jugados"].map(
+              (item) => (
+                <span
+                  key={item}
+                  style={{
+                    border: "1px solid #ffffff18",
+                    background: "#00000033",
+                    borderRadius: 8,
+                    padding: "8px 12px",
+                    fontSize: 12,
+                    color: "#ffffffaa",
+                  }}
+                >
+                  {item}
+                </span>
+              ),
+            )}
+          </div>
+        </div>
+
+        <aside
+          style={{
+            borderRadius: 18,
+            border: "1px solid #ffe60022",
+            background: "#0d0d22",
+            padding: 22,
+          }}
+        >
+          <div
+            style={{
+              color: "#ffe600",
+              fontSize: 12,
+              letterSpacing: 2,
+              textTransform: "uppercase",
+              marginBottom: 16,
+            }}
+          >
+            Resumen del catalogo
+          </div>
+          {[
+            [
+              "Juegos analizados",
+              catalogResumen?.total_juegos ?? catalogGames.length,
+            ],
+            [
+              "Free to play",
+              catalogResumen?.total_gratis ??
+                catalogGames.filter((game) => game.es_gratis).length,
+            ],
+            [
+              "Con actividad",
+              catalogResumen?.total_con_actividad ??
+                catalogGames.filter((game) => game.jugadores_actuales > 0).length,
+            ],
+            [
+              "Mostrando",
+              catalogResumen?.mostrando ?? catalogGames.length,
+            ],
+          ].map(([label, value]) => (
+            <div
+              key={label}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "12px 0",
+                borderBottom: "1px solid #ffffff0a",
+              }}
+            >
+              <span style={{ color: "#ffffff55", fontSize: 13 }}>{label}</span>
+              <strong style={{ color: "#fff" }}>{value}</strong>
+            </div>
+          ))}
+          <button
+            className="btn-buscar"
+            style={{ width: "100%", marginTop: 18, padding: "13px 16px" }}
+          >
+            Explorar recomendaciones
+          </button>
+        </aside>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          flexWrap: "wrap",
+          marginBottom: 20,
+        }}
+      >
+        {categorias.map((item) => (
+          <button
+            key={item}
+            className={`btn-mode ${categoria === item ? "active" : ""}`}
+            onClick={() => setCategoria(item)}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+
+      {marketError && (
+        <div
+          style={{
+            marginBottom: 18,
+            color: "#ff4d6d",
+            background: "#ff4d6d0a",
+            border: "1px solid #ff4d6d22",
+            borderRadius: 10,
+            padding: "12px 14px",
+          }}
+        >
+          {marketError}
+        </div>
+      )}
+
+      {loadingMarket ? (
+        <div style={{ color: "#ffffff55", padding: "28px 0" }}>
+          Cargando catalogo...
+        </div>
+      ) : (
+        <div className="market-grid">
+          {juegosVisibles.map((game) => (
+          <article key={game.app_id} className="market-card">
+            <div style={{ position: "relative" }}>
+              <img
+                src={`https://cdn.akamai.steamstatic.com/steam/apps/${game.app_id}/header.jpg`}
+                alt={game.nombre}
+                style={{
+                  width: "100%",
+                  height: 150,
+                  objectFit: "cover",
+                  display: "block",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  left: 10,
+                  top: 10,
+                  background: "#00ff9ddd",
+                  color: "#03120d",
+                  borderRadius: 7,
+                  padding: "5px 9px",
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: 1,
+                  textTransform: "uppercase",
+                }}
+              >
+                {getBadge(game)}
+              </div>
+            </div>
+            <div style={{ padding: 16 }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  marginBottom: 10,
+                }}
+              >
+                <div>
+                  <h3
+                    style={{
+                      color: "#fff",
+                      fontFamily: "'Rajdhani', sans-serif",
+                      fontSize: 20,
+                      lineHeight: 1.1,
+                      marginBottom: 4,
+                    }}
+                  >
+                    {game.nombre}
+                  </h3>
+                  <p style={{ color: "#ffffff44", fontSize: 12 }}>
+                    {limpiarTextoSteam(game.generos[0] ?? "Sin genero")} -{" "}
+                    {game.rating !== null ? `${game.rating}% positivo` : "Sin rating"}
+                  </p>
+                </div>
+                <strong
+                  style={{
+                    color: "#ffe600",
+                    whiteSpace: "nowrap",
+                    fontSize: 12,
+                    letterSpacing: 1,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Steam
+                </strong>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 6,
+                  marginBottom: 14,
+                }}
+              >
+                {game.tags.slice(0, 4).map((tag) => (
+                  <span key={tag} className="market-tag">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <a
+                  href={`https://store.steampowered.com/app/${game.app_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="market-buy"
+                >
+                  Ver en Steam
+                </a>
+              </div>
+            </div>
+          </article>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -583,7 +990,7 @@ function AutocompleteJuego({
               padding: 0,
             }}
           >
-            �
+            x
           </button>
         )}
       </div>
@@ -664,7 +1071,7 @@ function AutocompleteJuego({
               display: "inline-block",
             }}
           >
-             App ID {seleccionado.app_id} seleccionado
+            App ID {seleccionado.app_id} seleccionado
           </span>
         </div>
       )}
@@ -687,7 +1094,7 @@ export default function App() {
       return;
     }
     if (modo === "texto" && !consulta.trim()) {
-      setError("Escribe una descripci�n.");
+      setError("Escribe una descripcion.");
       return;
     }
     setLoading(true);
@@ -714,7 +1121,7 @@ export default function App() {
       setResultados(data.recomendaciones ?? data);
     } catch {
       setError(
-        "No se pudo conectar con la API. �Est� corriendo en localhost:8000?",
+        "No se pudo conectar con la API. Esta corriendo en localhost:8000?",
       );
     } finally {
       setLoading(false);
@@ -771,6 +1178,15 @@ export default function App() {
         .stat-card:hover { border-color: #ffe60033; transform: translateY(-3px); }
         .how-card { background: #0d0d22; border: 1px solid #ffffff0a; border-radius: 12px; padding: 22px; transition: border-color 0.2s, transform 0.2s; }
         .how-card:hover { border-color: #00ff9d33; transform: translateY(-3px); }
+        .market-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+        .market-card { background: #0d0d22; border: 1px solid #ffffff10; border-radius: 14px; overflow: hidden; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; }
+        .market-card:hover { transform: translateY(-4px); border-color: #00ff9d44; box-shadow: 0 18px 42px #00000055; }
+        .market-tag { border: 1px solid #ffffff12; background: #ffffff08; border-radius: 6px; padding: 4px 7px; color: #ffffff66; font-size: 11px; }
+        .market-buy { flex: 1; background: #00ff9d; border: 0; border-radius: 8px; color: #03120d; cursor: pointer; font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 800; letter-spacing: 1px; padding: 10px 12px; text-transform: uppercase; text-decoration: none; text-align: center; }
+        .market-link { border: 1px solid #ffffff18; border-radius: 8px; color: #ffffff88; text-decoration: none; padding: 10px 12px; font-size: 12px; display: inline-flex; align-items: center; }
+        @media (max-width: 820px) {
+          .market-hero { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
       {/* Fondo */}
@@ -866,17 +1282,39 @@ export default function App() {
           padding: "12px 32px",
         }}
       >
-        <div
+        <a
+          href="/"
           style={{
-            fontFamily: "'Rajdhani', sans-serif",
-            fontSize: 20,
-            fontWeight: 700,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 10,
             color: "#fff",
-            letterSpacing: -0.5,
+            textDecoration: "none",
           }}
         >
-          GG<span style={{ color: "#ffe600" }}>.</span>
-        </div>
+          <img
+            src="/gg-logo.png"
+            alt="Good Games"
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: "50%",
+              objectFit: "cover",
+              border: "1px solid #ffe60088",
+              boxShadow: "0 0 18px #ffe6002e",
+            }}
+          />
+          <span
+            style={{
+              fontFamily: "'Rajdhani', sans-serif",
+              fontSize: 20,
+              fontWeight: 700,
+              letterSpacing: 0,
+            }}
+          >
+            Good Games
+          </span>
+        </a>
         <a
           href="/admin"
           style={{
@@ -949,7 +1387,22 @@ export default function App() {
                 animation: "scanPulse 2s ease infinite",
               }}
             />
-            Sistema de Recomendaci�n � NLP + IA
+            Sistema de Recomendacion - NLP + IA
+          </div>
+
+          <div style={{ marginBottom: 18 }}>
+            <img
+              src="/gg-logo.png"
+              alt="Good Games"
+              style={{
+                width: 118,
+                height: 118,
+                borderRadius: "50%",
+                objectFit: "cover",
+                border: "2px solid #ffe600",
+                boxShadow: "0 0 38px #ffe60033",
+              }}
+            />
           </div>
 
           <h1
@@ -963,8 +1416,8 @@ export default function App() {
               color: "#fff",
             }}
           >
-            GG<span style={{ color: "#ffe600" }}>.</span>
-            <span style={{ color: "#ffffff" }}>RECOMENDADOR</span>
+            <span style={{ color: "#ffe600" }}>GG</span>
+            <span style={{ color: "#ffffff" }}> RECOMENDADOR</span>
           </h1>
 
           <p
@@ -976,7 +1429,7 @@ export default function App() {
               lineHeight: 1.6,
             }}
           >
-            Descubre tu pr�ximo juego favorito con inteligencia artificial y
+            Descubre tu proximo juego favorito con inteligencia artificial y
             procesamiento de lenguaje natural
           </p>
         </header>
@@ -1020,33 +1473,33 @@ export default function App() {
         </div>
 
         {/* Search box */}
-        <div
-          style={{
-            background: "linear-gradient(145deg, #0d0d22, #0a0a1a)",
-            border: "1px solid #ffffff0e",
-            borderRadius: 18,
-            padding: "32px",
-            marginBottom: 48,
-            boxShadow: "0 24px 64px #00000055",
-            animation: "fadeUp 0.6s ease 0.2s both",
-            position: "relative",
-            zIndex: 50,
-          }}
-        >
-          <div style={{ display: "flex", gap: 8, marginBottom: 22 }}>
-            <button
-              className={`btn-mode ${modo === "juego" ? "active" : ""}`}
-              onClick={() => cambiarModo("juego")}
+            <div
+              style={{
+                background: "linear-gradient(145deg, #0d0d22, #0a0a1a)",
+                border: "1px solid #ffffff0e",
+                borderRadius: 18,
+                padding: "32px",
+                marginBottom: 48,
+                boxShadow: "0 24px 64px #00000055",
+                animation: "fadeUp 0.6s ease 0.2s both",
+                position: "relative",
+                zIndex: 50,
+              }}
             >
-              <� Por Nombre
-            </button>
-            <button
-              className={`btn-mode ${modo === "texto" ? "active" : ""}`}
-              onClick={() => cambiarModo("texto")}
-            >
-              =� Por Descripci�n
-            </button>
-          </div>
+              <div style={{ display: "flex", gap: 8, marginBottom: 22 }}>
+                <button
+                  className={`btn-mode ${modo === "juego" ? "active" : ""}`}
+                  onClick={() => cambiarModo("juego")}
+                >
+                  Por Nombre
+                </button>
+                <button
+                  className={`btn-mode ${modo === "texto" ? "active" : ""}`}
+                  onClick={() => cambiarModo("texto")}
+                >
+                  Por Descripcion
+                </button>
+              </div>
 
           <div
             style={{
@@ -1069,7 +1522,7 @@ export default function App() {
               <input
                 className="gg-input"
                 type="text"
-                placeholder='Ej: "shooter t�ctico multijugador competitivo", "RPG de fantas�a con magia"...'
+                placeholder='Ej: "shooter tactico multijugador competitivo", "RPG de fantasia con magia"...'
                 value={consulta}
                 onChange={(e) => setConsulta(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && buscar()}
@@ -1077,7 +1530,7 @@ export default function App() {
               />
             )}
             <button className="btn-buscar" onClick={buscar} disabled={loading}>
-              {loading ? "� Analizando..." : "BUSCAR �"}
+              {loading ? "Analizando..." : "BUSCAR ->"}
             </button>
           </div>
 
@@ -1093,14 +1546,14 @@ export default function App() {
                 padding: "10px 14px",
               }}
             >
-              � {error}
+              ! {error}
             </div>
           )}
-        </div>
+            </div>
 
-        {/* Loading */}
-        {loading && (
-          <div style={{ textAlign: "center", padding: "80px 0" }}>
+            {/* Loading */}
+            {loading && (
+              <div style={{ textAlign: "center", padding: "80px 0" }}>
             <div
               style={{
                 display: "inline-flex",
@@ -1148,12 +1601,12 @@ export default function App() {
                 </p>
               </div>
             </div>
-          </div>
-        )}
+              </div>
+            )}
 
-        {/* Resultados */}
-        {!loading && resultados.length > 0 && (
-          <div style={{ animation: "fadeUp 0.4s ease both" }}>
+            {/* Resultados */}
+            {!loading && resultados.length > 0 && (
+              <div style={{ animation: "fadeUp 0.4s ease both" }}>
             <div
               style={{
                 display: "flex",
@@ -1215,12 +1668,12 @@ export default function App() {
                 <GameCard key={juego.app_id} game={juego} index={i} />
               ))}
             </div>
-          </div>
-        )}
+              </div>
+            )}
 
-        {/* Empty state */}
-        {!loading && resultados.length === 0 && !error && (
-          <div style={{ animation: "fadeUp 0.6s ease 0.3s both" }}>
+            {/* Empty state */}
+            {!loading && resultados.length === 0 && !error && (
+              <div style={{ animation: "fadeUp 0.6s ease 0.3s both" }}>
             <div style={{ marginBottom: 48 }}>
               <h2
                 style={{
@@ -1233,7 +1686,7 @@ export default function App() {
                   letterSpacing: 1,
                 }}
               >
-                �C�mo funciona?
+                Como funciona?
               </h2>
               <p
                 style={{
@@ -1243,7 +1696,7 @@ export default function App() {
                   marginBottom: 28,
                 }}
               >
-                Pipeline de recomendaci�n h�brida con 3 modelos de IA
+                Pipeline de recomendacion hibrida con 3 modelos de IA
               </p>
               <div
                 style={{
@@ -1291,7 +1744,7 @@ export default function App() {
                 borderRadius: 16,
               }}
             >
-              <div style={{ fontSize: 48, marginBottom: 12 }}><�</div>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>GAME</div>
               <p
                 style={{
                   fontFamily: "'Rajdhani', sans-serif",
@@ -1304,8 +1757,11 @@ export default function App() {
                 Busca un juego o describe lo que quieres jugar
               </p>
             </div>
-          </div>
-        )}
+              </div>
+            )}
+        <div style={{ marginTop: 56 }}>
+          <CatalogoSteamView />
+        </div>
       </div>
     </>
   );
